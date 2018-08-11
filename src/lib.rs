@@ -1,4 +1,4 @@
-// Copyright 2018 ilammy
+// Copyright 2018 (c) rust-themis developers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
