@@ -16,3 +16,4 @@ extern crate libc;
 
 pub mod error;
 pub mod secure_cell;
+pub mod secure_message;
