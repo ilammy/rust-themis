@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate libc;
+use libc::int32_t;
 
-pub mod error;
-pub mod secure_cell;
+#[allow(non_camel_case_types)]
+pub(crate) type themis_status_t = int32_t;
