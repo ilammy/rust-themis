@@ -36,8 +36,8 @@ extern "C" {
         master_key_length: size_t,
         user_context: *const uint8_t,
         user_context_length: size_t,
-        message: *const uint8_t,
-        message_length: size_t,
+        encrypted_message: *const uint8_t,
+        encrypted_message_length: size_t,
         plain_message: *mut uint8_t,
         plain_message_length: *mut size_t,
     ) -> themis_status_t;
@@ -60,8 +60,30 @@ extern "C" {
         master_key_length: size_t,
         user_context: *const uint8_t,
         user_context_length: size_t,
+        encrypted_message: *const uint8_t,
+        encrypted_message_length: size_t,
+        token: *const uint8_t,
+        token_length: size_t,
+        plain_message: *mut uint8_t,
+        plain_message_length: *mut size_t,
+    ) -> themis_status_t;
+
+    fn themis_secure_cell_encrypt_context_imprint(
+        master_key: *const uint8_t,
+        master_key_length: size_t,
         message: *const uint8_t,
         message_length: size_t,
+        context: *const uint8_t,
+        context_length: size_t,
+        encrypted_message: *mut uint8_t,
+        encrypted_message_length: *mut size_t,
+    ) -> themis_status_t;
+
+    fn themis_secure_cell_decrypt_context_imprint(
+        master_key: *const uint8_t,
+        master_key_length: size_t,
+        encrypted_message: *const uint8_t,
+        encrypted_message_length: size_t,
         token: *const uint8_t,
         token_length: size_t,
         plain_message: *mut uint8_t,
@@ -293,6 +315,110 @@ pub fn decrypt_token_protect(
     Ok(decrypted_message)
 }
 
+/// Encrypts `message` with `master_key` including optional `context`.
+pub fn encrypt_context_imprint(
+    master_key: &[u8],
+    message: &[u8],
+    context: &[u8],
+) -> Result<Vec<u8>, i32> {
+    let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
+    let (message_ptr, message_len) = into_raw_parts(message);
+    let (context_ptr, context_len) = into_raw_parts(context);
+
+    let mut encrypted_message = Vec::new();
+    let mut encrypted_message_len = 0;
+
+    unsafe {
+        let status = themis_secure_cell_encrypt_context_imprint(
+            master_key_ptr,
+            master_key_len,
+            message_ptr,
+            message_len,
+            context_ptr,
+            context_len,
+            ptr::null_mut(),
+            &mut encrypted_message_len,
+        );
+        if status != 14 {
+            return Err(status);
+        }
+    }
+
+    encrypted_message.reserve(encrypted_message_len as usize);
+
+    unsafe {
+        let status = themis_secure_cell_encrypt_context_imprint(
+            master_key_ptr,
+            master_key_len,
+            message_ptr,
+            message_len,
+            context_ptr,
+            context_len,
+            encrypted_message.as_mut_ptr(),
+            &mut encrypted_message_len,
+        );
+        if status != 0 {
+            return Err(status);
+        }
+        debug_assert!(encrypted_message_len <= encrypted_message.capacity());
+        encrypted_message.set_len(encrypted_message_len as usize);
+    }
+
+    Ok(encrypted_message)
+}
+
+/// Decrypts `message` with `master_key` and expected `context`, but do not verify data.
+pub fn decrypt_context_imprint(
+    master_key: &[u8],
+    message: &[u8],
+    context: &[u8],
+) -> Result<Vec<u8>, i32> {
+    let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
+    let (message_ptr, message_len) = into_raw_parts(message);
+    let (context_ptr, context_len) = into_raw_parts(context);
+
+    let mut decrypted_message = Vec::new();
+    let mut decrypted_message_len = 0;
+
+    unsafe {
+        let status = themis_secure_cell_decrypt_context_imprint(
+            master_key_ptr,
+            master_key_len,
+            message_ptr,
+            message_len,
+            context_ptr,
+            context_len,
+            ptr::null_mut(),
+            &mut decrypted_message_len,
+        );
+        if status != 14 {
+            return Err(status);
+        }
+    }
+
+    decrypted_message.reserve(decrypted_message_len as usize);
+
+    unsafe {
+        let status = themis_secure_cell_decrypt_context_imprint(
+            master_key_ptr,
+            master_key_len,
+            message_ptr,
+            message_len,
+            context_ptr,
+            context_len,
+            decrypted_message.as_mut_ptr(),
+            &mut decrypted_message_len,
+        );
+        if status != 0 {
+            return Err(status);
+        }
+        debug_assert!(decrypted_message_len <= decrypted_message.capacity());
+        decrypted_message.set_len(decrypted_message_len as usize);
+    }
+
+    Ok(decrypted_message)
+}
+
 fn into_raw_parts(slice: &[u8]) -> (*const uint8_t, size_t) {
     (slice.as_ptr(), slice.len() as size_t)
 }
@@ -405,5 +531,61 @@ mod tests {
         let error = decrypt_token_protect(password, &[], &ciphertext, &token).unwrap_err();
 
         assert_eq!(error, 12);
+    }
+
+    #[test]
+    fn mode_context_imprint_happy_path() {
+        let plaintext = b"example plaintext";
+        let password = b"deep secret";
+
+        let ciphertext = encrypt_context_imprint(password, plaintext, b"123").unwrap();
+        let recovered = decrypt_context_imprint(password, &ciphertext, b"123").unwrap();
+
+        assert_eq!(recovered, plaintext);
+    }
+
+    #[test]
+    fn mode_context_imprint_empty_context() {
+        let plaintext = b"example plaintext";
+        let password = b"deep secret";
+
+        let error = encrypt_context_imprint(password, plaintext, &[]).unwrap_err();
+
+        assert_eq!(error, 12);
+    }
+
+    #[test]
+    fn mode_context_imprint_invalid_key() {
+        let plaintext = b"example plaintext";
+        let password = b"deep secret";
+        let invalid = b"DEEP SECRET";
+
+        let ciphertext = encrypt_context_imprint(password, plaintext, b"123").unwrap();
+        let recovered = decrypt_context_imprint(invalid, &ciphertext, b"123").unwrap();
+
+        assert_ne!(recovered, plaintext);
+    }
+
+    #[test]
+    fn mode_context_imprint_invalid_context() {
+        let plaintext = b"example plaintext";
+        let password = b"deep secret";
+
+        let ciphertext = encrypt_context_imprint(password, plaintext, b"123").unwrap();
+        let recovered = decrypt_context_imprint(password, &ciphertext, b"456").unwrap();
+
+        assert_ne!(recovered, plaintext);
+    }
+
+    #[test]
+    fn mode_context_imprint_corrupted_data() {
+        let plaintext = b"example plaintext";
+        let password = b"deep secret";
+
+        let mut ciphertext = encrypt_context_imprint(password, plaintext, b"123").unwrap();
+        ciphertext[10] = 42;
+        let recovered = decrypt_context_imprint(password, &ciphertext, b"123").unwrap();
+
+        assert_ne!(recovered, plaintext);
     }
 }
