@@ -1,0 +1,6 @@
+[package]
+name = "themis"
+version = "0.1.0"
+authors = ["ilammy <a.lozovsky@gmail.com>"]
+
+[dependencies]
