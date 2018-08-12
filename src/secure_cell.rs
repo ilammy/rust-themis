@@ -17,6 +17,7 @@ use std::ptr;
 use libc::{size_t, uint8_t};
 
 use error::themis_status_t;
+use utils::into_raw_parts;
 
 #[link(name = "themis")]
 extern "C" {
@@ -417,10 +418,6 @@ pub fn decrypt_context_imprint(
     }
 
     Ok(decrypted_message)
-}
-
-fn into_raw_parts(slice: &[u8]) -> (*const uint8_t, size_t) {
-    (slice.as_ptr(), slice.len() as size_t)
 }
 
 #[cfg(test)]
