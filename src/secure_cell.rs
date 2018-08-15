@@ -16,7 +16,7 @@ use std::ptr;
 
 use libc::{size_t, uint8_t};
 
-use error::themis_status_t;
+use error::{themis_status_t, Error, ErrorKind};
 use utils::into_raw_parts;
 
 #[link(name = "themis")]
@@ -97,7 +97,7 @@ pub fn encrypt_seal(
     master_key: &[u8],
     user_context: &[u8],
     message: &[u8],
-) -> Result<Vec<u8>, i32> {
+) -> Result<Vec<u8>, Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -106,7 +106,7 @@ pub fn encrypt_seal(
     let mut encrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_encrypt_seal(
+        let error: Error = themis_secure_cell_encrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -115,16 +115,16 @@ pub fn encrypt_seal(
             message_len,
             ptr::null_mut(),
             &mut encrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
     encrypted_message.reserve(encrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_encrypt_seal(
+        let error: Error = themis_secure_cell_encrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -133,9 +133,9 @@ pub fn encrypt_seal(
             message_len,
             encrypted_message.as_mut_ptr(),
             &mut encrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(encrypted_message_len <= encrypted_message.capacity());
         encrypted_message.set_len(encrypted_message_len as usize);
@@ -149,7 +149,7 @@ pub fn decrypt_seal(
     master_key: &[u8],
     user_context: &[u8],
     message: &[u8],
-) -> Result<Vec<u8>, i32> {
+) -> Result<Vec<u8>, Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -158,7 +158,7 @@ pub fn decrypt_seal(
     let mut decrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_decrypt_seal(
+        let error: Error = themis_secure_cell_decrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -167,16 +167,16 @@ pub fn decrypt_seal(
             message_len,
             ptr::null_mut(),
             &mut decrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
     decrypted_message.reserve(decrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_decrypt_seal(
+        let error: Error = themis_secure_cell_decrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -185,9 +185,9 @@ pub fn decrypt_seal(
             message_len,
             decrypted_message.as_mut_ptr(),
             &mut decrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(decrypted_message_len <= decrypted_message.capacity());
         decrypted_message.set_len(decrypted_message_len as usize);
@@ -202,7 +202,7 @@ pub fn encrypt_token_protect(
     master_key: &[u8],
     user_context: &[u8],
     message: &[u8],
-) -> Result<(Vec<u8>, Vec<u8>), i32> {
+) -> Result<(Vec<u8>, Vec<u8>), Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -213,7 +213,7 @@ pub fn encrypt_token_protect(
     let mut encrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_encrypt_token_protect(
+        let error: Error = themis_secure_cell_encrypt_token_protect(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -224,9 +224,9 @@ pub fn encrypt_token_protect(
             &mut token_len,
             ptr::null_mut(),
             &mut encrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
@@ -234,7 +234,7 @@ pub fn encrypt_token_protect(
     encrypted_message.reserve(encrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_encrypt_token_protect(
+        let error: Error = themis_secure_cell_encrypt_token_protect(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -245,9 +245,9 @@ pub fn encrypt_token_protect(
             &mut token_len,
             encrypted_message.as_mut_ptr(),
             &mut encrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(token_len <= token.capacity());
         token.set_len(token_len as usize);
@@ -264,7 +264,7 @@ pub fn decrypt_token_protect(
     user_context: &[u8],
     message: &[u8],
     token: &[u8],
-) -> Result<Vec<u8>, i32> {
+) -> Result<Vec<u8>, Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -274,7 +274,7 @@ pub fn decrypt_token_protect(
     let mut decrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_decrypt_token_protect(
+        let error: Error = themis_secure_cell_decrypt_token_protect(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -285,16 +285,16 @@ pub fn decrypt_token_protect(
             token_len,
             ptr::null_mut(),
             &mut decrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
     decrypted_message.reserve(decrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_decrypt_token_protect(
+        let error: Error = themis_secure_cell_decrypt_token_protect(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -305,9 +305,9 @@ pub fn decrypt_token_protect(
             token_len,
             decrypted_message.as_mut_ptr(),
             &mut decrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(decrypted_message_len <= decrypted_message.capacity());
         decrypted_message.set_len(decrypted_message_len as usize);
@@ -321,7 +321,7 @@ pub fn encrypt_context_imprint(
     master_key: &[u8],
     message: &[u8],
     context: &[u8],
-) -> Result<Vec<u8>, i32> {
+) -> Result<Vec<u8>, Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (message_ptr, message_len) = into_raw_parts(message);
     let (context_ptr, context_len) = into_raw_parts(context);
@@ -330,7 +330,7 @@ pub fn encrypt_context_imprint(
     let mut encrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_encrypt_context_imprint(
+        let error: Error = themis_secure_cell_encrypt_context_imprint(
             master_key_ptr,
             master_key_len,
             message_ptr,
@@ -339,16 +339,16 @@ pub fn encrypt_context_imprint(
             context_len,
             ptr::null_mut(),
             &mut encrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
     encrypted_message.reserve(encrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_encrypt_context_imprint(
+        let error: Error = themis_secure_cell_encrypt_context_imprint(
             master_key_ptr,
             master_key_len,
             message_ptr,
@@ -357,9 +357,9 @@ pub fn encrypt_context_imprint(
             context_len,
             encrypted_message.as_mut_ptr(),
             &mut encrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(encrypted_message_len <= encrypted_message.capacity());
         encrypted_message.set_len(encrypted_message_len as usize);
@@ -373,7 +373,7 @@ pub fn decrypt_context_imprint(
     master_key: &[u8],
     message: &[u8],
     context: &[u8],
-) -> Result<Vec<u8>, i32> {
+) -> Result<Vec<u8>, Error> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (message_ptr, message_len) = into_raw_parts(message);
     let (context_ptr, context_len) = into_raw_parts(context);
@@ -382,7 +382,7 @@ pub fn decrypt_context_imprint(
     let mut decrypted_message_len = 0;
 
     unsafe {
-        let status = themis_secure_cell_decrypt_context_imprint(
+        let error: Error = themis_secure_cell_decrypt_context_imprint(
             master_key_ptr,
             master_key_len,
             message_ptr,
@@ -391,16 +391,16 @@ pub fn decrypt_context_imprint(
             context_len,
             ptr::null_mut(),
             &mut decrypted_message_len,
-        );
-        if status != 14 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::BufferTooSmall {
+            return Err(error);
         }
     }
 
     decrypted_message.reserve(decrypted_message_len as usize);
 
     unsafe {
-        let status = themis_secure_cell_decrypt_context_imprint(
+        let error: Error = themis_secure_cell_decrypt_context_imprint(
             master_key_ptr,
             master_key_len,
             message_ptr,
@@ -409,9 +409,9 @@ pub fn decrypt_context_imprint(
             context_len,
             decrypted_message.as_mut_ptr(),
             &mut decrypted_message_len,
-        );
-        if status != 0 {
-            return Err(status);
+        ).into();
+        if error.kind() != ErrorKind::Success {
+            return Err(error);
         }
         debug_assert!(decrypted_message_len <= decrypted_message.capacity());
         decrypted_message.set_len(decrypted_message_len as usize);
@@ -423,6 +423,8 @@ pub fn decrypt_context_imprint(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use error::ErrorKind;
 
     #[test]
     fn mode_seal_happy_path() {
@@ -444,7 +446,7 @@ mod tests {
         let ciphertext = encrypt_seal(password, &[], plaintext).unwrap();
         let error = decrypt_seal(invalid, &[], &ciphertext).unwrap_err();
 
-        assert_eq!(error, 11);
+        assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
     #[test]
@@ -455,7 +457,7 @@ mod tests {
         let ciphertext = encrypt_seal(password, b"ctx1", plaintext).unwrap();
         let error = decrypt_seal(password, b"ctx2", &ciphertext).unwrap_err();
 
-        assert_eq!(error, 11);
+        assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
     #[test]
@@ -467,7 +469,7 @@ mod tests {
         ciphertext[10] = 42;
         let error = decrypt_seal(password, &[], &ciphertext).unwrap_err();
 
-        assert_eq!(error, 12);
+        assert_eq!(error.kind(), ErrorKind::InvalidParameter);
     }
 
     #[test]
@@ -492,7 +494,7 @@ mod tests {
         let (ciphertext, token) = encrypt_token_protect(password, &[], plaintext).unwrap();
         let error = decrypt_token_protect(invalid, &[], &ciphertext, &token).unwrap_err();
 
-        assert_eq!(error, 11);
+        assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
     #[test]
@@ -503,7 +505,7 @@ mod tests {
         let (ciphertext, token) = encrypt_token_protect(password, b"123", plaintext).unwrap();
         let error = decrypt_token_protect(password, b"456", &ciphertext, &token).unwrap_err();
 
-        assert_eq!(error, 11);
+        assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
     #[test]
@@ -515,7 +517,7 @@ mod tests {
         ciphertext[10] = 42;
         let error = decrypt_token_protect(password, &[], &ciphertext, &token).unwrap_err();
 
-        assert_eq!(error, 11);
+        assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
     #[test]
@@ -527,7 +529,7 @@ mod tests {
         token[10] = 42;
         let error = decrypt_token_protect(password, &[], &ciphertext, &token).unwrap_err();
 
-        assert_eq!(error, 12);
+        assert_eq!(error.kind(), ErrorKind::InvalidParameter);
     }
 
     #[test]
@@ -548,7 +550,7 @@ mod tests {
 
         let error = encrypt_context_imprint(password, plaintext, &[]).unwrap_err();
 
-        assert_eq!(error, 12);
+        assert_eq!(error.kind(), ErrorKind::InvalidParameter);
     }
 
     #[test]
