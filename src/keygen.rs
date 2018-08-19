@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::ops::Deref;
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -36,30 +35,8 @@ extern "C" {
     ) -> themis_status_t;
 }
 
-pub struct PublicKey(Vec<u8>);
-
-pub struct PrivateKey(Vec<u8>);
-
-// TODO: remove these temporary Deref impls when Secure Messages get proper API.
-
-impl Deref for PublicKey {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.0
-    }
-}
-
-impl Deref for PrivateKey {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.0
-    }
-}
-
 /// Generate a pair of private-public RSA keys.
-pub fn gen_rsa_key_pair() -> Result<(PrivateKey, PublicKey), Error> {
+pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;
@@ -96,11 +73,11 @@ pub fn gen_rsa_key_pair() -> Result<(PrivateKey, PublicKey), Error> {
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((PrivateKey(private_key), PublicKey(public_key)))
+    Ok((private_key, public_key))
 }
 
 /// Generate a pair of private-public ECDSA keys.
-pub fn gen_ec_key_pair() -> Result<(PrivateKey, PublicKey), Error> {
+pub fn gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;
@@ -137,5 +114,5 @@ pub fn gen_ec_key_pair() -> Result<(PrivateKey, PublicKey), Error> {
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((PrivateKey(private_key), PublicKey(public_key)))
+    Ok((private_key, public_key))
 }

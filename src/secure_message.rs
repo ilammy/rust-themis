@@ -185,6 +185,23 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::Fail);
     }
 
+    // TODO: investigate crashes in Themis
+    // This test crashes with SIGSEGV as Themis seems to not verify correctness of private-public
+    // keys. Maybe we will need to use newtype idiom to make sure that keys are not misplaced, or
+    // we'd better fix the crash and produce an expected error.
+    #[test]
+    #[ignore]
+    fn misplaced_keys() {
+        let (private, public) = gen_rsa_key_pair().unwrap();
+        let message = b"test message please ignore";
+
+        // Note that key parameters are in wrong order.
+        let secure_message = wrap(&public, &private, message).unwrap();
+        let error = unwrap(&public, &private, &secure_message).unwrap_err();
+
+        assert_eq!(error.kind(), ErrorKind::InvalidParameter);
+    }
+
     #[test]
     fn corrupted_data() {
         let (private, public) = gen_rsa_key_pair().unwrap();
