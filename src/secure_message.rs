@@ -28,8 +28,8 @@ extern "C" {
         public_key_length: size_t,
         message: *const uint8_t,
         message_length: size_t,
-        wrapped_message: *mut uint8_t,
-        wrapped_message_length: *mut size_t,
+        wrapped: *mut uint8_t,
+        wrapped_length: *mut size_t,
     ) -> themis_status_t;
 
     fn themis_secure_message_unwrap(
@@ -37,21 +37,89 @@ extern "C" {
         private_key_length: size_t,
         public_key: *const uint8_t,
         public_key_length: size_t,
-        wrapped_message: *const uint8_t,
-        wrapped_message_length: size_t,
+        wrapped: *const uint8_t,
+        wrapped_length: size_t,
         message: *mut uint8_t,
         message_length: *mut size_t,
     ) -> themis_status_t;
 }
 
+pub struct SecureMessage<D, E> {
+    private_key: D,
+    public_key: E,
+}
+
+impl<D, E> SecureMessage<D, E>
+where
+    D: AsRef<[u8]>,
+    E: AsRef<[u8]>,
+{
+    pub fn new(private_key: D, public_key: E) -> Self {
+        Self {
+            private_key,
+            public_key,
+        }
+    }
+
+    pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+        wrap(
+            self.private_key.as_ref(),
+            self.public_key.as_ref(),
+            message.as_ref(),
+        )
+    }
+
+    pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>, Error> {
+        unwrap(
+            self.private_key.as_ref(),
+            self.public_key.as_ref(),
+            wrapped.as_ref(),
+        )
+    }
+}
+
+pub struct SecureSign<D> {
+    private_key: D,
+}
+
+impl<D> SecureSign<D>
+where
+    D: AsRef<[u8]>,
+{
+    pub fn new(private_key: D) -> Self {
+        Self { private_key }
+    }
+
+    pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+        wrap(self.private_key.as_ref(), &[], message.as_ref())
+    }
+}
+
+pub struct SecureVerify<E> {
+    public_key: E,
+}
+
+impl<E> SecureVerify<E>
+where
+    E: AsRef<[u8]>,
+{
+    pub fn new(public_key: E) -> Self {
+        Self { public_key }
+    }
+
+    pub fn verify<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+        unwrap(&[], self.public_key.as_ref(), message.as_ref())
+    }
+}
+
 /// Wrap a message into a secure message.
-pub fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
     let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
     let (message_ptr, message_len) = into_raw_parts(message);
 
-    let mut wrapped_message = Vec::new();
-    let mut wrapped_message_len = 0;
+    let mut wrapped = Vec::new();
+    let mut wrapped_len = 0;
 
     unsafe {
         let error: Error = themis_secure_message_wrap(
@@ -62,14 +130,14 @@ pub fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec
             message_ptr,
             message_len,
             ptr::null_mut(),
-            &mut wrapped_message_len,
+            &mut wrapped_len,
         ).into();
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
     }
 
-    wrapped_message.reserve(wrapped_message_len);
+    wrapped.reserve(wrapped_len);
 
     unsafe {
         let error: Error = themis_secure_message_wrap(
@@ -79,28 +147,24 @@ pub fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec
             public_key_len,
             message_ptr,
             message_len,
-            wrapped_message.as_mut_ptr(),
-            &mut wrapped_message_len,
+            wrapped.as_mut_ptr(),
+            &mut wrapped_len,
         ).into();
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
-        debug_assert!(wrapped_message_len <= wrapped_message.capacity());
-        wrapped_message.set_len(wrapped_message_len as usize);
+        debug_assert!(wrapped_len <= wrapped.capacity());
+        wrapped.set_len(wrapped_len as usize);
     }
 
-    Ok(wrapped_message)
+    Ok(wrapped)
 }
 
 /// Unwrap a secure message into a message.
-pub fn unwrap(
-    private_key: &[u8],
-    public_key: &[u8],
-    wrapped_message: &[u8],
-) -> Result<Vec<u8>, Error> {
+fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u8>, Error> {
     let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
-    let (wrapped_message_ptr, wrapped_message_len) = into_raw_parts(wrapped_message);
+    let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped);
 
     let mut message = Vec::new();
     let mut message_len = 0;
@@ -111,8 +175,8 @@ pub fn unwrap(
             private_key_len,
             public_key_ptr,
             public_key_len,
-            wrapped_message_ptr,
-            wrapped_message_len,
+            wrapped_ptr,
+            wrapped_len,
             ptr::null_mut(),
             &mut message_len,
         ).into();
@@ -129,8 +193,8 @@ pub fn unwrap(
             private_key_len,
             public_key_ptr,
             public_key_len,
-            wrapped_message_ptr,
-            wrapped_message_len,
+            wrapped_ptr,
+            wrapped_len,
             message.as_mut_ptr(),
             &mut message_len,
         ).into();
@@ -146,41 +210,45 @@ pub fn unwrap(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use error::ErrorKind;
     use keygen::{gen_ec_key_pair, gen_rsa_key_pair};
+    use secure_message::{SecureMessage, SecureSign, SecureVerify};
 
     #[test]
     fn mode_encrypt_decrypt() {
         let (private, public) = gen_rsa_key_pair().unwrap();
-        let message = b"test message please ignore";
+        let secure = SecureMessage::new(private, public);
 
-        let secure_message = wrap(&private, &public, message).unwrap();
-        let recovered = unwrap(&private, &public, &secure_message).unwrap();
+        let plaintext = b"test message please ignore";
+        let wrapped = secure.wrap(&plaintext).expect("encryption");
+        let recovered_message = secure.unwrap(&wrapped).expect("decryption");
 
-        assert_eq!(recovered, message);
+        assert_eq!(recovered_message, plaintext);
     }
 
     #[test]
     fn mode_sign_verify() {
         let (private, public) = gen_rsa_key_pair().unwrap();
-        let message = b"test message please ignore";
+        let sign = SecureSign::new(private);
+        let verify = SecureVerify::new(public);
 
-        let secure_message = wrap(&private, &[], message).unwrap();
-        let recovered = unwrap(&private, &public, &secure_message).unwrap();
+        let plaintext = b"test message please ignore";
+        let signed_message = sign.sign(&plaintext).unwrap();
+        let recovered_message = verify.verify(&signed_message).unwrap();
 
-        assert_eq!(recovered, message);
+        assert_eq!(recovered_message, plaintext);
     }
 
     #[test]
     fn invalid_key() {
         let (private1, public1) = gen_ec_key_pair().unwrap();
         let (private2, public2) = gen_ec_key_pair().unwrap();
-        let message = b"test message please ignore";
+        let secure1 = SecureMessage::new(private1, public1);
+        let secure2 = SecureMessage::new(private2, public2);
 
-        let secure_message = wrap(&private1, &public1, message).unwrap();
-        let error = unwrap(&private2, &public2, &secure_message).unwrap_err();
+        let plaintext = b"test message please ignore";
+        let wrapped = secure1.wrap(&plaintext).expect("encryption");
+        let error = secure2.unwrap(&wrapped).expect_err("decryption error");
 
         assert_eq!(error.kind(), ErrorKind::Fail);
     }
@@ -193,11 +261,12 @@ mod tests {
     #[ignore]
     fn misplaced_keys() {
         let (private, public) = gen_rsa_key_pair().unwrap();
-        let message = b"test message please ignore";
-
         // Note that key parameters are in wrong order.
-        let secure_message = wrap(&public, &private, message).unwrap();
-        let error = unwrap(&public, &private, &secure_message).unwrap_err();
+        let secure = SecureMessage::new(public, private);
+
+        let plaintext = b"test message please ignore";
+        let wrapped = secure.wrap(&plaintext).expect("encryption");
+        let error = secure.unwrap(&wrapped).expect_err("decryption error");
 
         assert_eq!(error.kind(), ErrorKind::InvalidParameter);
     }
@@ -205,14 +274,15 @@ mod tests {
     #[test]
     fn corrupted_data() {
         let (private, public) = gen_rsa_key_pair().unwrap();
-        let message = b"test message please ignore";
+        let secure = SecureMessage::new(private, public);
 
         // TODO: investigate crashes in Themis
         // Using index "10" for example leads to a crash with SIGBUS, so Themis definitely
         // could use some audit because it does not really handle corrupted messages well.
-        let mut secure_message = wrap(&private, &public, message).unwrap();
-        secure_message[5] = 42;
-        let error = unwrap(&private, &public, &secure_message).unwrap_err();
+        let plaintext = b"test message please ignore";
+        let mut wrapped = secure.wrap(&plaintext).expect("encryption");
+        wrapped[5] = 42;
+        let error = secure.unwrap(&wrapped).expect_err("decryption error");
 
         assert_eq!(error.kind(), ErrorKind::InvalidParameter);
     }
