@@ -58,9 +58,9 @@ impl<K, C> SecureCell<K, C> {
 }
 
 impl<K, C> SecureCell<K, C>
-    where
-        K: AsRef<[u8]>,
-        C: AsRef<[u8]>,
+where
+    K: AsRef<[u8]>,
+    C: AsRef<[u8]>,
 {
     fn master_key(&self) -> &[u8] {
         self.master_key.as_ref()

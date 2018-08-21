@@ -52,9 +52,9 @@ extern "C" {
 pub struct SecureCellTokenProtect<K, C>(pub(crate) SecureCell<K, C>);
 
 impl<K, C> SecureCellTokenProtect<K, C>
-    where
-        K: AsRef<[u8]>,
-        C: AsRef<[u8]>,
+where
+    K: AsRef<[u8]>,
+    C: AsRef<[u8]>,
 {
     pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<(Vec<u8>, Vec<u8>), Error> {
         encrypt_token_protect(self.0.master_key(), self.0.user_context(), message.as_ref())
