@@ -18,5 +18,6 @@ pub mod error;
 pub mod keygen;
 pub mod secure_cell;
 pub mod secure_message;
+pub mod secure_session;
 
 mod utils;
