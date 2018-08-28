@@ -60,6 +60,20 @@ extern "C" {
         message_ptr: *mut uint8_t,
         message_len: *mut size_t,
     ) -> themis_status_t;
+
+    fn secure_session_connect(session_ctx: *mut secure_session_t) -> themis_status_t;
+
+    fn secure_session_send(
+        session_ctx: *mut secure_session_t,
+        message_ptr: *const uint8_t,
+        message_len: size_t,
+    ) -> ssize_t;
+
+    fn secure_session_receive(
+        session_ctx: *mut secure_session_t,
+        message_ptr: *mut uint8_t,
+        message_len: size_t,
+    ) -> ssize_t;
 }
 
 #[allow(non_camel_case_types)]
@@ -90,6 +104,8 @@ pub struct SecureSession<T> {
 
 #[allow(unused_variables)]
 pub trait SecureSessionTransport {
+    // TODO: consider send/receive use std::io::Error for errors (or a custom type)
+
     fn send_data(&mut self, data: &[u8]) -> Result<usize, ()> {
         Err(())
     }
@@ -193,6 +209,16 @@ where
         }
 
         Ok(id)
+    }
+
+    pub fn connect(&mut self) -> Result<(), Error> {
+        unsafe {
+            let error: Error = secure_session_connect(self.session_ctx).into();
+            if error.kind() != ErrorKind::Success {
+                return Err(error);
+            }
+        }
+        Ok(())
     }
 
     pub fn generate_connect_request(&mut self) -> Result<Vec<u8>, Error> {
@@ -348,6 +374,57 @@ where
 
         Ok(message)
     }
+
+    // TODO: make Themis improve the error reporting for send and receive
+    //
+    // Themis sends messages in full. Partial transfer is considered an error. In case of an
+    // error the error code is returned in-band and cannot be distinguished from a successful
+    // return of message length. This is the best we can do at the moment.
+    //
+    // Furthermore, Themis expects the send callback to send the whole message so it is kinda
+    // pointless to return the amount of bytes send. The receive callback returns accurate number
+    // of bytes, but I do not really like the Rust interface this implies. It could be made better.
+
+    pub fn send<M: AsRef<[u8]>>(&mut self, message: M) -> Result<(), Error> {
+        let (message_ptr, message_len) = into_raw_parts(message.as_ref());
+
+        unsafe {
+            let length = secure_session_send(self.session_ctx, message_ptr, message_len);
+            if length <= 21 {
+                return Err((length as c_int).into());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn receive(&mut self, max_len: usize) -> Result<Vec<u8>, Error> {
+        let mut message = Vec::with_capacity(max_len);
+
+        unsafe {
+            let length =
+                secure_session_receive(self.session_ctx, message.as_mut_ptr(), message.capacity());
+            if length <= 21 {
+                return Err((length as c_int).into());
+            }
+            debug_assert!(length as usize <= message.capacity());
+            message.set_len(length as usize);
+        }
+
+        Ok(message)
+    }
+
+    pub fn negotiate_transport(&mut self) -> Result<(), Error> {
+        unsafe {
+            let result = secure_session_receive(self.session_ctx, ptr::null_mut(), 0);
+            let error = Error::from(result as themis_status_t);
+            if error.kind() != ErrorKind::Success {
+                return Err(error);
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl<T> SecureSessionDelegate<T>
@@ -487,6 +564,7 @@ mod tests {
 
     use std::collections::BTreeMap;
     use std::rc::Rc;
+    use std::sync::mpsc::{channel, Receiver, Sender};
 
     use keygen::gen_ec_key_pair;
 
@@ -503,6 +581,61 @@ mod tests {
     }
 
     impl SecureSessionTransport for DummyTransport {
+        fn get_public_key_for_id(&mut self, id: &[u8], key_out: &mut [u8]) -> bool {
+            if let Some(key) = self.key_map.get(id) {
+                assert!(key_out.len() >= key.len());
+                key_out[0..key.len()].copy_from_slice(key);
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    struct ChannelTransport {
+        key_map: Rc<BTreeMap<Vec<u8>, Vec<u8>>>,
+        tx: Sender<Vec<u8>>,
+        rx: Receiver<Vec<u8>>,
+    }
+
+    impl ChannelTransport {
+        fn new(key_map: &Rc<BTreeMap<Vec<u8>, Vec<u8>>>) -> (Self, Self) {
+            let (tx12, rx21) = channel();
+            let (tx21, rx12) = channel();
+
+            let transport1 = Self {
+                key_map: key_map.clone(),
+                tx: tx12,
+                rx: rx12,
+            };
+            let transport2 = Self {
+                key_map: key_map.clone(),
+                tx: tx21,
+                rx: rx21,
+            };
+
+            (transport1, transport2)
+        }
+    }
+
+    impl SecureSessionTransport for ChannelTransport {
+        fn send_data(&mut self, data: &[u8]) -> Result<usize, ()> {
+            self.tx
+                .send(data.to_vec())
+                .map(|_| data.len())
+                .map_err(|_| ())
+        }
+
+        fn receive_data(&mut self, data: &mut [u8]) -> Result<usize, ()> {
+            let msg = self.rx.recv().map_err(|_| ())?;
+            println!("received {} (expected max {})", msg.len(), data.len());
+            if msg.len() > data.len() {
+                return Err(());
+            }
+            data[0..msg.len()].copy_from_slice(&msg);
+            Ok(msg.len())
+        }
+
         fn get_public_key_for_id(&mut self, id: &[u8], key_out: &mut [u8]) -> bool {
             if let Some(key) = self.key_map.get(id) {
                 assert!(key_out.len() >= key.len());
@@ -585,5 +718,49 @@ mod tests {
         let unwrapped1 = server.unwrap(&wrapped1).expect("message 1");
         assert_eq!(unwrapped1, b"message 1");
         assert_eq!(unwrapped2, b"message 2");
+    }
+
+    #[test]
+    fn with_transport() {
+        // Peer credentials. Secure Session supports only ECDSA.
+        // TODO: tests that confirm RSA failure
+        let (private_client, public_client) = gen_ec_key_pair().unwrap();
+        let (private_server, public_server) = gen_ec_key_pair().unwrap();
+        let (name_client, name_server) = ("client", "server");
+
+        // Shared storage of public peer credentials. These should be communicated between
+        // the peers beforehand in some unspecified trusted way.
+        let mut key_map = BTreeMap::new();
+        key_map.insert(name_client.as_bytes().to_vec(), public_client);
+        key_map.insert(name_server.as_bytes().to_vec(), public_server);
+        let key_map = Rc::new(key_map);
+
+        // The client and the server.
+        let (transport_client, transport_server) = ChannelTransport::new(&key_map);
+        let mut client =
+            SecureSession::with_transport(name_client, private_client, transport_client).unwrap();
+        let mut server =
+            SecureSession::with_transport(name_server, private_server, transport_server).unwrap();
+
+        assert!(!client.is_established());
+        assert!(!server.is_established());
+
+        // Establishing connection.
+        client.connect().expect("client-side connection");
+        server.negotiate_transport().expect("connect reply");
+        client.negotiate_transport().expect("key proposed");
+        server.negotiate_transport().expect("key accepted");
+        client.negotiate_transport().expect("key confirmed");
+
+        assert!(client.is_established());
+        assert!(server.is_established());
+
+        // Try sending a message back and forth.
+        let message = b"test message please ignore";
+        client.send(&message).expect("send message");
+
+        let received = server.receive(1024).expect("receive message");
+
+        assert_eq!(received, message);
     }
 }
