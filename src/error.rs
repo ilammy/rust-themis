@@ -31,6 +31,10 @@ const THEMIS_SSESSION_SEND_OUTPUT_TO_PEER: themis_status_t = 1;
 const THEMIS_SSESSION_KA_NOT_FINISHED: themis_status_t = 19;
 const THEMIS_SSESSION_TRANSPORT_ERROR: themis_status_t = 20;
 const THEMIS_SSESSION_GET_PUB_FOR_ID_CALLBACK_ERROR: themis_status_t = 21;
+const THEMIS_SCOMPARE_SEND_OUTPUT_TO_PEER: themis_status_t = 1;
+const THEMIS_SCOMPARE_MATCH: themis_status_t = 21;
+const THEMIS_SCOMPARE_NO_MATCH: themis_status_t = 22;
+const THEMIS_SCOMPARE_NOT_READY: themis_status_t = 0;
 
 #[derive(Debug, Clone)]
 pub struct Error {
@@ -70,6 +74,30 @@ impl Error {
         Error { kind }
     }
 
+    /// Converts status codes returned by Secure Comparator data exchange.
+    pub(crate) fn from_compare_status(status: themis_status_t) -> Error {
+        let kind = match status {
+            THEMIS_SCOMPARE_SEND_OUTPUT_TO_PEER => ErrorKind::CompareSendOutputToPeer,
+            other_status => {
+                return Error::from_themis_status(other_status);
+            }
+        };
+        Error { kind }
+    }
+
+    /// Converts status codes returned by Secure Comparator status query.
+    pub(crate) fn from_match_status(status: themis_status_t) -> Error {
+        let kind = match status {
+            THEMIS_SCOMPARE_NOT_READY => ErrorKind::CompareNotReady,
+            THEMIS_SCOMPARE_MATCH => ErrorKind::CompareMatch,
+            THEMIS_SCOMPARE_NO_MATCH => ErrorKind::CompareNoMatch,
+            other_status => {
+                return Error::from_themis_status(other_status);
+            }
+        };
+        Error { kind }
+    }
+
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
@@ -97,6 +125,11 @@ impl fmt::Display for Error {
             ErrorKind::SessionGetPublicKeyForIdError => {
                 write!(f, "failed to get public key for ID")
             }
+
+            ErrorKind::CompareSendOutputToPeer => write!(f, "send comparison data to peer"),
+            ErrorKind::CompareMatch => write!(f, "data matches"),
+            ErrorKind::CompareNoMatch => write!(f, "data does not match"),
+            ErrorKind::CompareNotReady => write!(f, "comparator not ready"),
         }
     }
 }
@@ -118,4 +151,9 @@ pub enum ErrorKind {
     SessionKeyAgreementNotFinished,
     SessionTransportError,
     SessionGetPublicKeyForIdError,
+
+    CompareSendOutputToPeer,
+    CompareMatch,
+    CompareNoMatch,
+    CompareNotReady,
 }
