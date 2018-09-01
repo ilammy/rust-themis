@@ -640,7 +640,6 @@ mod tests {
 
         fn receive_data(&mut self, data: &mut [u8]) -> Result<usize, ()> {
             let msg = self.rx.recv().map_err(|_| ())?;
-            println!("received {} (expected max {})", msg.len(), data.len());
             if msg.len() > data.len() {
                 return Err(());
             }
