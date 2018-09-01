@@ -43,12 +43,13 @@ pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut public_key_len = 0;
 
     unsafe {
-        let error: Error = themis_gen_rsa_key_pair(
+        let status = themis_gen_rsa_key_pair(
             ptr::null_mut(),
             &mut private_key_len,
             ptr::null_mut(),
             &mut public_key_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -58,12 +59,13 @@ pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     public_key.reserve(private_key_len);
 
     unsafe {
-        let error: Error = themis_gen_rsa_key_pair(
+        let status = themis_gen_rsa_key_pair(
             private_key.as_mut_ptr(),
             &mut private_key_len,
             public_key.as_mut_ptr(),
             &mut public_key_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
@@ -84,12 +86,13 @@ pub fn gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut public_key_len = 0;
 
     unsafe {
-        let error: Error = themis_gen_ec_key_pair(
+        let status = themis_gen_ec_key_pair(
             ptr::null_mut(),
             &mut private_key_len,
             ptr::null_mut(),
             &mut public_key_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -99,12 +102,13 @@ pub fn gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     public_key.reserve(private_key_len);
 
     unsafe {
-        let error: Error = themis_gen_ec_key_pair(
+        let status = themis_gen_ec_key_pair(
             private_key.as_mut_ptr(),
             &mut private_key_len,
             public_key.as_mut_ptr(),
             &mut public_key_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }

@@ -71,7 +71,7 @@ fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
     let mut encrypted_message_len = 0;
 
     unsafe {
-        let error: Error = themis_secure_cell_encrypt_seal(
+        let status = themis_secure_cell_encrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -80,7 +80,8 @@ fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
             message_len,
             ptr::null_mut(),
             &mut encrypted_message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -89,7 +90,7 @@ fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
     encrypted_message.reserve(encrypted_message_len as usize);
 
     unsafe {
-        let error: Error = themis_secure_cell_encrypt_seal(
+        let status = themis_secure_cell_encrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -98,7 +99,8 @@ fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
             message_len,
             encrypted_message.as_mut_ptr(),
             &mut encrypted_message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
@@ -119,7 +121,7 @@ fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
     let mut decrypted_message_len = 0;
 
     unsafe {
-        let error: Error = themis_secure_cell_decrypt_seal(
+        let status = themis_secure_cell_decrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -128,7 +130,8 @@ fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
             message_len,
             ptr::null_mut(),
             &mut decrypted_message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -137,7 +140,7 @@ fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
     decrypted_message.reserve(decrypted_message_len as usize);
 
     unsafe {
-        let error: Error = themis_secure_cell_decrypt_seal(
+        let status = themis_secure_cell_decrypt_seal(
             master_key_ptr,
             master_key_len,
             user_context_ptr,
@@ -146,7 +149,8 @@ fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
             message_len,
             decrypted_message.as_mut_ptr(),
             &mut decrypted_message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }

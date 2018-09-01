@@ -189,8 +189,9 @@ where
         let mut id_len = 0;
 
         unsafe {
-            let error: Error =
-                secure_session_get_remote_id(self.session_ctx, ptr::null_mut(), &mut id_len).into();
+            let status =
+                secure_session_get_remote_id(self.session_ctx, ptr::null_mut(), &mut id_len);
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::BufferTooSmall {
                 return Err(error);
             }
@@ -199,8 +200,9 @@ where
         id.reserve(id_len);
 
         unsafe {
-            let error: Error =
-                secure_session_get_remote_id(self.session_ctx, id.as_mut_ptr(), &mut id_len).into();
+            let status =
+                secure_session_get_remote_id(self.session_ctx, id.as_mut_ptr(), &mut id_len);
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -213,7 +215,8 @@ where
 
     pub fn connect(&mut self) -> Result<(), Error> {
         unsafe {
-            let error: Error = secure_session_connect(self.session_ctx).into();
+            let status = secure_session_connect(self.session_ctx);
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -226,11 +229,12 @@ where
         let mut output_len = 0;
 
         unsafe {
-            let error: Error = secure_session_generate_connect_request(
+            let status = secure_session_generate_connect_request(
                 self.session_ctx,
                 ptr::null_mut(),
                 &mut output_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::BufferTooSmall {
                 return Err(error);
             }
@@ -239,11 +243,12 @@ where
         output.reserve(output_len);
 
         unsafe {
-            let error: Error = secure_session_generate_connect_request(
+            let status = secure_session_generate_connect_request(
                 self.session_ctx,
                 output.as_mut_ptr(),
                 &mut output_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -261,13 +266,14 @@ where
         let mut wrapped_len = 0;
 
         unsafe {
-            let error: Error = secure_session_wrap(
+            let status = secure_session_wrap(
                 self.session_ctx,
                 message_ptr,
                 message_len,
                 ptr::null_mut(),
                 &mut wrapped_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::BufferTooSmall {
                 return Err(error);
             }
@@ -276,13 +282,14 @@ where
         wrapped.reserve(wrapped_len);
 
         unsafe {
-            let error: Error = secure_session_wrap(
+            let status = secure_session_wrap(
                 self.session_ctx,
                 message_ptr,
                 message_len,
                 wrapped.as_mut_ptr(),
                 &mut wrapped_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -300,13 +307,14 @@ where
         let mut message_len = 0;
 
         unsafe {
-            let error: Error = secure_session_unwrap(
+            let status = secure_session_unwrap(
                 self.session_ctx,
                 wrapped_ptr,
                 wrapped_len,
                 ptr::null_mut(),
                 &mut message_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::BufferTooSmall {
                 return Err(error);
             }
@@ -315,13 +323,14 @@ where
         message.reserve(message_len);
 
         unsafe {
-            let error: Error = secure_session_unwrap(
+            let status = secure_session_unwrap(
                 self.session_ctx,
                 wrapped_ptr,
                 wrapped_len,
                 message.as_mut_ptr(),
                 &mut message_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -339,13 +348,14 @@ where
         let mut message_len = 0;
 
         unsafe {
-            let error: Error = secure_session_unwrap(
+            let status = secure_session_unwrap(
                 self.session_ctx,
                 wrapped_ptr,
                 wrapped_len,
                 ptr::null_mut(),
                 &mut message_len,
-            ).into();
+            );
+            let error = Error::from_session_status(status);
             if error.kind() == ErrorKind::Success {
                 return Ok(message);
             }
@@ -357,14 +367,15 @@ where
         message.reserve(message_len);
 
         unsafe {
-            let error: Error = secure_session_unwrap(
+            let status = secure_session_unwrap(
                 self.session_ctx,
                 wrapped_ptr,
                 wrapped_len,
                 message.as_mut_ptr(),
                 &mut message_len,
-            ).into();
-            if error.kind() != ErrorKind::SendOutputToPeer {
+            );
+            let error = Error::from_session_status(status);
+            if error.kind() != ErrorKind::SessionSendOutputToPeer {
                 assert_ne!(error.kind(), ErrorKind::Success);
                 return Err(error);
             }
@@ -391,7 +402,7 @@ where
         unsafe {
             let length = secure_session_send(self.session_ctx, message_ptr, message_len);
             if length <= 21 {
-                return Err((length as c_int).into());
+                return Err(Error::from_session_status(length as themis_status_t));
             }
         }
 
@@ -405,7 +416,7 @@ where
             let length =
                 secure_session_receive(self.session_ctx, message.as_mut_ptr(), message.capacity());
             if length <= 21 {
-                return Err((length as c_int).into());
+                return Err(Error::from_session_status(length as themis_status_t));
             }
             debug_assert!(length as usize <= message.capacity());
             message.set_len(length as usize);
@@ -417,7 +428,7 @@ where
     pub fn negotiate_transport(&mut self) -> Result<(), Error> {
         unsafe {
             let result = secure_session_receive(self.session_ctx, ptr::null_mut(), 0);
-            let error = Error::from(result as themis_status_t);
+            let error = Error::from_session_status(result as themis_status_t);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
             }
@@ -520,7 +531,8 @@ where
 impl<D> Drop for SecureSession<D> {
     fn drop(&mut self) {
         unsafe {
-            let error: Error = secure_session_destroy(self.session_ctx).into();
+            let status = secure_session_destroy(self.session_ctx);
+            let error = Error::from_session_status(status);
             if error.kind() != ErrorKind::Success {
                 if cfg!(debug) || cfg!(test) {
                     panic!("secure_session_destroy() failed: {}", error);

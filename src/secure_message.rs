@@ -122,7 +122,7 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
     let mut wrapped_len = 0;
 
     unsafe {
-        let error: Error = themis_secure_message_wrap(
+        let status = themis_secure_message_wrap(
             private_key_ptr,
             private_key_len,
             public_key_ptr,
@@ -131,7 +131,8 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
             message_len,
             ptr::null_mut(),
             &mut wrapped_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -140,7 +141,7 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
     wrapped.reserve(wrapped_len);
 
     unsafe {
-        let error: Error = themis_secure_message_wrap(
+        let status = themis_secure_message_wrap(
             private_key_ptr,
             private_key_len,
             public_key_ptr,
@@ -149,7 +150,8 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
             message_len,
             wrapped.as_mut_ptr(),
             &mut wrapped_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
@@ -170,7 +172,7 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
     let mut message_len = 0;
 
     unsafe {
-        let error: Error = themis_secure_message_unwrap(
+        let status = themis_secure_message_unwrap(
             private_key_ptr,
             private_key_len,
             public_key_ptr,
@@ -179,7 +181,8 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
             wrapped_len,
             ptr::null_mut(),
             &mut message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::BufferTooSmall {
             return Err(error);
         }
@@ -188,7 +191,7 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
     message.reserve(message_len);
 
     unsafe {
-        let error: Error = themis_secure_message_unwrap(
+        let status = themis_secure_message_unwrap(
             private_key_ptr,
             private_key_len,
             public_key_ptr,
@@ -197,7 +200,8 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
             wrapped_len,
             message.as_mut_ptr(),
             &mut message_len,
-        ).into();
+        );
+        let error = Error::from_themis_status(status);
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
