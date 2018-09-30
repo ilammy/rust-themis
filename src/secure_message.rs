@@ -44,6 +44,7 @@ extern "C" {
     ) -> themis_status_t;
 }
 
+#[derive(Clone)]
 pub struct SecureMessage<D, E> {
     private_key: D,
     public_key: E,
@@ -78,6 +79,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct SecureSign<D> {
     private_key: D,
 }
@@ -95,6 +97,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct SecureVerify<E> {
     public_key: E,
 }

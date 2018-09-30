@@ -5,3 +5,8 @@ authors = ["rust-themis developers"]
 
 [dependencies]
 libc = "0.2"
+
+[dev-dependencies]
+clap = "2.32"
+log = "0.4.5"
+env_logger = "0.5.13"

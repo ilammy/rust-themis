@@ -14,11 +14,13 @@
 
 extern crate libc;
 
-pub mod error;
 pub mod keygen;
 pub mod secure_cell;
 pub mod secure_comparator;
 pub mod secure_message;
 pub mod secure_session;
 
+mod error;
 mod utils;
+
+pub use error::{Error, ErrorKind};
