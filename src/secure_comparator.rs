@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Secure Comparator service.
+//!
+//! **Secure Comparator** is an implementation of _Zero-Knowledge Proof_-based protocol,
+//! built around OTR SMP implementation.
+
 use std::ptr;
 
 use libc::{c_void, size_t, uint8_t};
@@ -51,11 +56,15 @@ extern "C" {
 #[allow(non_camel_case_types)]
 type secure_comparator_t = c_void;
 
+/// Secure Comparison context.
 pub struct SecureComparator {
     comp_ctx: *mut secure_comparator_t,
 }
 
 impl SecureComparator {
+    /// Prepares for a new comparison.
+    ///
+    /// Returns `None` on internal unrecoverable errors (like memory allocation).
     pub fn new() -> Option<Self> {
         let comp_ctx = unsafe { secure_comparator_create() };
 
@@ -66,6 +75,19 @@ impl SecureComparator {
         Some(Self { comp_ctx })
     }
 
+    /// Collects the data to be compared.
+    ///
+    /// Note that there is no way to remove data. If even a single byte is mismatched by the peers
+    /// then the comparison will always return `false`. In this case you will need to recreate
+    /// a `SecureComparator` to make a new comparison.
+    ///
+    /// You can use this method between completed comparisons, but not when you're in the middle
+    /// of one. That is, [`append_secret`] is safe call either before [`begin_compare`]
+    /// or after [`get_result`]. Otherwise it will fail and return an error.
+    ///
+    /// [`append_secret`]: struct.SecureComparator.html#method.append_secret
+    /// [`begin_compare`]: struct.SecureComparator.html#method.begin_compare
+    /// [`get_result`]: struct.SecureComparator.html#method.get_result
     pub fn append_secret<S: AsRef<[u8]>>(&mut self, secret: S) -> Result<(), Error> {
         let (secret_ptr, secret_len) = into_raw_parts(secret.as_ref());
 
@@ -80,6 +102,16 @@ impl SecureComparator {
         Ok(())
     }
 
+    /// Starts comparison on the client returning the first message.
+    ///
+    /// This method should be called by the client which initiates the comparison. Make sure you
+    /// have appended all the data you need before you call this method.
+    ///
+    /// The resulting message should be transferred to the remote peer and passed to the
+    /// [`proceed_compare`] of its `SecureComparator`. The remote peer should have also appended
+    /// all the data by this point.
+    ///
+    /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
     pub fn begin_compare(&mut self) -> Result<Vec<u8>, Error> {
         let mut compare_data = Vec::new();
         let mut compare_data_len = 0;
@@ -115,6 +147,19 @@ impl SecureComparator {
         Ok(compare_data)
     }
 
+    /// Continues comparison process with given message.
+    ///
+    /// This method should be called by the responding server with a message received from the
+    /// client. It returns another message which should be passed back to the client and put
+    /// into its [`proceed_compare`] method (that is, this method again). The client then should
+    /// do the same. The process repeats until the comparison is complete.
+    ///
+    //  TODO: research and document when the comparison is considered complete
+    ///
+    /// Both peers should have appended all the compared data before using this method, and no
+    /// additional data should be appended while the comparison is underway.
+    ///
+    /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
     pub fn proceed_compare<D: AsRef<[u8]>>(&mut self, peer_data: D) -> Result<Vec<u8>, Error> {
         let (peer_compare_data_ptr, peer_compare_data_len) = into_raw_parts(peer_data.as_ref());
 
@@ -161,6 +206,10 @@ impl SecureComparator {
         Ok(compare_data)
     }
 
+    /// Returns the result of comparison.
+    ///
+    /// Let it be a surprise: `true` if data has been found equal on both peers, `false` otherwise.
+    /// Or an error if you call this method too early.
     pub fn get_result(&self) -> Result<bool, Error> {
         let status = unsafe { secure_comparator_get_result(self.comp_ctx) };
         let error = Error::from_match_status(status);
@@ -172,6 +221,7 @@ impl SecureComparator {
     }
 }
 
+#[doc(hidden)]
 impl Drop for SecureComparator {
     fn drop(&mut self) {
         unsafe {

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Themis error types.
+//!
+//! This module wraps Themis error types and provides useful Rust API for them.
+
 use std::{error, fmt};
 
 use libc::int32_t;
@@ -36,6 +40,13 @@ const THEMIS_SCOMPARE_MATCH: themis_status_t = 21;
 const THEMIS_SCOMPARE_NO_MATCH: themis_status_t = 22;
 const THEMIS_SCOMPARE_NOT_READY: themis_status_t = 0;
 
+/// The error type for most Themis operations.
+///
+/// Errors are usually caused by invalid, malformed or malicious input as well as incorrect usage
+/// of the library. However, they may also result from underlying OS errors. See [`ErrorKind`] for
+/// details.
+///
+/// [`ErrorKind`]: enum.ErrorKind.html
 #[derive(Debug, Clone)]
 pub struct Error {
     kind: ErrorKind,
@@ -98,6 +109,7 @@ impl Error {
         Error { kind }
     }
 
+    /// Returns the corresponding `ErrorKind` for this error.
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
@@ -134,26 +146,69 @@ impl fmt::Display for Error {
     }
 }
 
+/// A list of Themis error categories.
+///
+/// This enumeration is used by [`Error`] type, returned by most Themis functions. Some error kinds
+/// are specific to particular functions, and some are used internally by the library.
+///
+/// [`Error`]: struct.Error.html
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ErrorKind {
+    /// Catch-all generic error.
+    ///
+    /// If you encounter this error kind then the Themis binding is likely to be out of sync with
+    /// the core library. The contained error code has not been mapped onto `ErrorKind` value.
+    #[doc(hidden)]
     UnknownError(i32),
+    /// "Fatal error: success!"
+    ///
+    /// This value is used internally to distinguish successful function calls conveniently.
+    /// End-users should never encounter it.
+    #[doc(hidden)]
     Success,
 
+    /// General failure.
     Fail,
+    /// Some input parameter has incorrect value.
     InvalidParameter,
+    /// Could not allocate memory.
     NoMemory,
+    /// The provided buffer is too small to fit the result.
     BufferTooSmall,
+    /// Input data is corrupted.
     DataCorrupt,
+    /// Input data contains invalid signature.
     InvalidSignature,
+    /// Operation not supported.
     NotSupported,
 
+    /// Send output with internal data of Secure Session to the peer.
+    ///
+    /// This is not actually an error and the end-user should never see it.
+    #[doc(hidden)]
     SessionSendOutputToPeer,
+    /// Attempt to use Secure Session before completing key exchange.
     SessionKeyAgreementNotFinished,
+    /// Transport layer returned error.
     SessionTransportError,
+    /// Could not retrieve a public key corresponding to peer ID.
     SessionGetPublicKeyForIdError,
 
+    /// Send output with internal data of Secure Comparator to the peer.
+    ///
+    /// This is not actually an error and the end-user should never see it.
+    #[doc(hidden)]
     CompareSendOutputToPeer,
+    /// Indicates that compared data matches.
+    ///
+    /// This is not actually an error and the end-user should never see it.
+    #[doc(hidden)]
     CompareMatch,
+    /// Indicates that compared data does not match.
+    ///
+    /// This is not actually an error and the end-user should never see it.
+    #[doc(hidden)]
     CompareNoMatch,
+    /// Attempt to use Secure Comparator before completing nonce exchange.
     CompareNotReady,
 }

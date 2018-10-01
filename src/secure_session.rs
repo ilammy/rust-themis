@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Secure Session service.
+//!
+//! **Secure Session** is a lightweight mechanism for securing any kind of network communication
+//! (both private and public networks, including the Internet).
+
 use std::{ptr, slice};
 
 use libc::{c_int, c_void, size_t, ssize_t, uint8_t};
@@ -97,25 +102,65 @@ struct secure_session_user_callbacks_t {
     user_data: *mut c_void,
 }
 
+/// Secure Session context.
 pub struct SecureSession<T> {
     session_ctx: *mut secure_session_t,
     _delegate: Box<SecureSessionDelegate<T>>,
 }
 
+/// Transport delegate for Secure Session.
+///
+/// This is an interface you need to provide for Secure Session operation.
+///
+/// The only required method is [`get_public_key_for_id`]. It is required for public key
+/// authentication. Other methods are optional, you can use Secure Session without them,
+/// but some functionality may be unavailable.
+///
+/// [`get_public_key_for_id`]: trait.SecureSessionTransport.html#tymethod.get_public_key_for_id
 #[allow(unused_variables)]
 pub trait SecureSessionTransport {
     // TODO: consider send/receive use std::io::Error for errors (or a custom type)
 
+    /// Send the provided data to the peer, return the number of bytes transferred.
+    ///
+    /// This callback will be called when Secure Session needs to send some data to its peer.
+    /// The whole message is expected to be transferred so returning anything other than
+    /// `Ok(data.len())` is considered an error.
+    ///
+    /// This method is used by the transport API ([`connect`], [`negotiate_transport`], [`send`]).
+    /// You need to implement it in order to use this API.
+    ///
+    /// [`connect`]: struct.SecureSession.html#method.connect
+    /// [`negotiate_transport`]: struct.SecureSession.html#method.negotiate_transport
+    /// [`send`]: struct.SecureSession.html#method.send
     fn send_data(&mut self, data: &[u8]) -> Result<usize, ()> {
         Err(())
     }
 
+    /// Receive some data from the peer into the provided buffer, return the number of bytes.
+    ///
+    /// This callback will be called when Secure Session expects to receive some data. The length
+    /// of the buffer indicates the maximum amount of data expected. Put the received data into
+    /// the provided buffer and return the number of bytes that you used.
+    ///
+    /// This method is used by the transport API ([`negotiate_transport`], [`receive`]).
+    /// You need to implement it in order to use this API.
+    ///
+    /// [`negotiate_transport`]: struct.SecureSession.html#method.negotiate_transport
+    /// [`receive`]: struct.SecureSession.html#method.receive
     fn receive_data(&mut self, data: &mut [u8]) -> Result<usize, ()> {
         Err(())
     }
 
+    /// Notification about connection state of Secure Session.
+    ///
+    /// This method is truly optional and has no effect on Secure Session operation.
     fn state_changed(&mut self, state: SecureSessionState) {}
 
+    /// Get a public key corresponding to a peer ID.
+    ///
+    /// Look up the key and place it into the provided buffer. Return `true` if a key has been
+    /// found for the provided ID and `false` for unknown IDs.
     fn get_public_key_for_id(&mut self, id: &[u8], key: &mut [u8]) -> bool;
 }
 
@@ -128,10 +173,14 @@ struct SecureSessionDelegate<T> {
     transport: T,
 }
 
+/// State of Secure Session connection.
 #[derive(PartialEq, Eq)]
 pub enum SecureSessionState {
+    /// Newly created sessions start in this state.
     Idle,
+    /// Connection establishment in progress.
     Negotiation,
+    /// Connection has been established, data exchange may commence.
     Established,
 }
 
@@ -151,6 +200,14 @@ where
     T: SecureSessionTransport,
 {
     // TODO: introduce a builder
+
+    /// Creates a new Secure Session.
+    ///
+    /// ID is an arbitrary byte sequence used to identify this peer.
+    ///
+    /// Secure Session supports only ECDSA keys.
+    ///
+    /// Returns `None` if anything is wrong with the parameters.
     pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Option<Self>
     where
         I: AsRef<[u8]>,
@@ -174,6 +231,7 @@ where
         })
     }
 
+    /// Returns `true` if this Secure Session may be used for data transfer.
     pub fn is_established(&self) -> bool {
         unsafe { secure_session_is_established(self.session_ctx) }
     }
@@ -184,6 +242,9 @@ where
     // memory, then call the function again to do actual work, then fix the length of the vector.
     // It would be nice to have this abstracted out so that we don't have to repeat ourselves.
 
+    /// Returns ID of the remote peer.
+    ///
+    /// This method will return an error if the connection has not been established yet.
     pub fn get_remote_id(&self) -> Result<Vec<u8>, Error> {
         let mut id = Vec::new();
         let mut id_len = 0;
@@ -213,6 +274,21 @@ where
         Ok(id)
     }
 
+    /// Initiates connection to the remote peer.
+    ///
+    /// This is the first method to call. It uses transport callbacks to send the resulting
+    /// connection request to the peer. Afterwards call [`negotiate_transport`] until the
+    /// connection is established. That is, until the [`state_changed`] callback of your
+    /// `SecureSessionTransport` tells you that the connection is `Established`, or until
+    /// [`is_established`] on this Secure Session returns `true`.
+    ///
+    /// This method is a part of transport API and requires [`send_data`] method of
+    /// `SecureSessionTransport`.
+    ///
+    /// [`negotiate_transport`]: struct.SecureSession.html#method.negotiate_transport
+    /// [`state_changed`]: trait.SecureSessionTransport.html#method.state_changed
+    /// [`is_established`]: struct.SecureSession.html#method.is_established
+    /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
     pub fn connect(&mut self) -> Result<(), Error> {
         unsafe {
             let status = secure_session_connect(self.session_ctx);
@@ -224,6 +300,20 @@ where
         Ok(())
     }
 
+    /// Initiates connection to the remote peer, returns connection message.
+    ///
+    /// This is the first method to call. It returns you a message that you must somehow
+    /// transfer to the remote peer and give it to its [`negotiate`] method. This results in
+    /// another message which must be transferred back to this Secure Session and passed to
+    /// its [`negotiate`] method. Continue passing these message around until the connection
+    /// is established. That is, until the [`state_changed`] callback of your
+    /// `SecureSessionTransport` tells you that the connection is `Established`, or until
+    /// [`is_established`] on this Secure Session returns `true`, or until [`negotiate`]
+    /// returns an empty message.
+    ///
+    /// [`negotiate`]: struct.SecureSession.html#method.negotiate
+    /// [`state_changed`]: trait.SecureSessionTransport.html#method.state_changed
+    /// [`is_established`]: struct.SecureSession.html#method.is_established
     pub fn generate_connect_request(&mut self) -> Result<Vec<u8>, Error> {
         let mut output = Vec::new();
         let mut output_len = 0;
@@ -259,6 +349,16 @@ where
         Ok(output)
     }
 
+    /// Wraps a message and returns it.
+    ///
+    /// The message can be transferred to the remote peer and unwrapped there with [`unwrap`].
+    ///
+    /// Wrapped message are independent and can be exchanged out of order. You can wrap multiple
+    /// messages then unwrap them in any order or don't unwrap some of them at all.
+    ///
+    /// This method will fail if a secure connection has not been established yet.
+    ///
+    /// [`unwrap`]: struct.SecureSession.html#method.unwrap
     pub fn wrap<M: AsRef<[u8]>>(&mut self, message: M) -> Result<Vec<u8>, Error> {
         let (message_ptr, message_len) = into_raw_parts(message.as_ref());
 
@@ -300,6 +400,13 @@ where
         Ok(wrapped)
     }
 
+    /// Unwraps a message and returns it.
+    ///
+    /// Unwraps a message previously [wrapped] by the remote peer.
+    ///
+    /// This method will fail if a secure connection has not been established yet.
+    ///
+    /// [wrapped]: struct.SecureSession.html#method.wrap
     pub fn unwrap<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>, Error> {
         let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped.as_ref());
 
@@ -341,6 +448,17 @@ where
         Ok(message)
     }
 
+    /// Continues connection negotiation with given message.
+    ///
+    /// This method performs one step of connection negotiation. The server should call this
+    /// method first with a message received from client's [`generate_connect_request`].
+    /// Its result is another negotiation message that should be transferred to the client.
+    /// The client then calls this method on a message and forwards the resulting message
+    /// to the server. If the returned message is empty then negotiation is complete and
+    /// the Secure Session is ready to be used.
+    ///
+    /// [`negotiate`]: struct.SecureSession.html#method.negotiate
+    /// [`generate_connect_request`]: struct.SecureSession.html#method.generate_connect_request
     pub fn negotiate<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>, Error> {
         let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped.as_ref());
 
@@ -396,6 +514,14 @@ where
     // pointless to return the amount of bytes send. The receive callback returns accurate number
     // of bytes, but I do not really like the Rust interface this implies. It could be made better.
 
+    /// Sends a message to the remote peer.
+    ///
+    /// This method will fail if a secure connection has not been established yet.
+    ///
+    /// This method is a part of transport API and requires [`send_data`] method of
+    /// `SecureSessionTransport`.
+    ///
+    /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
     pub fn send<M: AsRef<[u8]>>(&mut self, message: M) -> Result<(), Error> {
         let (message_ptr, message_len) = into_raw_parts(message.as_ref());
 
@@ -409,6 +535,17 @@ where
         Ok(())
     }
 
+    /// Receives a message from the remote peer.
+    ///
+    /// Maximum length of the message is specified by the parameter. The message will be truncated
+    /// to this length if the peer sends something larger.
+    ///
+    /// This method will fail if a secure connection has not been established yet.
+    ///
+    /// This method is a part of transport API and requires [`receive_data`] method of
+    /// `SecureSessionTransport`.
+    ///
+    /// [`receive_data`]: trait.SecureSessionTransport.html#method.receive_data
     pub fn receive(&mut self, max_len: usize) -> Result<Vec<u8>, Error> {
         let mut message = Vec::with_capacity(max_len);
 
@@ -425,6 +562,19 @@ where
         Ok(message)
     }
 
+    /// Continues connection negotiation.
+    ///
+    /// This method performs one step of connection negotiation. This is the first method to call
+    /// for the server, the client calls it after the initial [`connect`]. Both peers shall then
+    /// repeatedly call this method until the connection is established (see [`connect`] for
+    /// details).
+    ///
+    /// This method is a part of transport API and requires [`send_data`] and [`receive_data`]
+    /// methods of `SecureSessionTransport`.
+    ///
+    /// [`connect`]: struct.SecureSession.html#method.connect
+    /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
+    /// [`receive_data`]: trait.SecureSessionTransport.html#method.receive_data
     pub fn negotiate_transport(&mut self) -> Result<(), Error> {
         unsafe {
             let result = secure_session_receive(self.session_ctx, ptr::null_mut(), 0);
@@ -528,6 +678,7 @@ where
     }
 }
 
+#[doc(hidden)]
 impl<D> Drop for SecureSession<D> {
     fn drop(&mut self) {
         unsafe {

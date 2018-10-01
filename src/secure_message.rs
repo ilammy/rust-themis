@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Secure Message service.
+//!
+//! **Secure Message** is a lightweight service that can help deliver some message or data
+//! to your peer in a secure manner.
+
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -44,6 +49,9 @@ extern "C" {
     ) -> themis_status_t;
 }
 
+/// Secure Message encryption.
+///
+/// Messages produced by this object will be encrypted and verified for integrity.
 #[derive(Clone)]
 pub struct SecureMessage<D, E> {
     private_key: D,
@@ -55,6 +63,7 @@ where
     D: AsRef<[u8]>,
     E: AsRef<[u8]>,
 {
+    /// Makes a new Secure Message using given keys.
     pub fn new(private_key: D, public_key: E) -> Self {
         Self {
             private_key,
@@ -62,6 +71,7 @@ where
         }
     }
 
+    /// Wraps the provided message into a secure encrypted message.
     pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         wrap(
             self.private_key.as_ref(),
@@ -70,6 +80,7 @@ where
         )
     }
 
+    /// Unwraps an encrypted message back into its original form.
     pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>, Error> {
         unwrap(
             self.private_key.as_ref(),
@@ -79,6 +90,13 @@ where
     }
 }
 
+/// Secure Message signing.
+///
+/// Messages produced by this object will be signed and verified for integrity, but not encrypted.
+///
+/// The signatures can be checked with [`SecureVerify`].
+///
+/// [`SecureVerify`]: struct.SecureVerify.html
 #[derive(Clone)]
 pub struct SecureSign<D> {
     private_key: D,
@@ -88,15 +106,22 @@ impl<D> SecureSign<D>
 where
     D: AsRef<[u8]>,
 {
+    /// Makes a new Secure Message using given private key.
     pub fn new(private_key: D) -> Self {
         Self { private_key }
     }
 
+    /// Securely signs a message and returns it with signature attached.
     pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         wrap(self.private_key.as_ref(), &[], message.as_ref())
     }
 }
 
+/// Secure Message verification.
+///
+/// Verifies signatures produced by [`SecureSign`].
+///
+/// [`SecureSign`]: struct.SecureSign.html
 #[derive(Clone)]
 pub struct SecureVerify<E> {
     public_key: E,
@@ -106,10 +131,12 @@ impl<E> SecureVerify<E>
 where
     E: AsRef<[u8]>,
 {
+    /// Makes a new Secure Message using given public key.
     pub fn new(public_key: E) -> Self {
         Self { public_key }
     }
 
+    /// Verifies a signature and returns the original message.
     pub fn verify<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         unwrap(&[], self.public_key.as_ref(), message.as_ref())
     }

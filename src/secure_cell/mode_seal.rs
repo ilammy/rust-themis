@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! _Sealing_ mode of Secure Cell.
+//!
+//! See top-level module documentation for details.
+
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -45,6 +49,7 @@ extern "C" {
     ) -> themis_status_t;
 }
 
+/// Secure Cell in a _sealing_ operation mode.
 pub struct SecureCellSeal<K, C>(pub(crate) SecureCell<K, C>);
 
 impl<K, C> SecureCellSeal<K, C>
@@ -52,10 +57,12 @@ where
     K: AsRef<[u8]>,
     C: AsRef<[u8]>,
 {
+    /// Encrypts and puts the provided message into a sealed cell.
     pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         encrypt_seal(self.0.master_key(), self.0.user_context(), message.as_ref())
     }
 
+    /// Extracts the original message from a sealed cell.
     pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         decrypt_seal(self.0.master_key(), self.0.user_context(), message.as_ref())
     }

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! _Context Imprint_ mode of Secure Cell.
+//!
+//! See top-level module documentation for details.
+
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -45,6 +49,7 @@ extern "C" {
     ) -> themis_status_t;
 }
 
+/// Secure Cell in a _context imprint_ operation mode.
 pub struct SecureCellContextImprint<K, C>(pub(crate) SecureCell<K, C>);
 
 impl<K, C> SecureCellContextImprint<K, C>
@@ -52,10 +57,20 @@ where
     K: AsRef<[u8]>,
     C: AsRef<[u8]>,
 {
+    /// Encrypts the provided message and returns the ciphertext.
+    ///
+    /// The resulting message has the same length as the input data and does not contain
+    /// an authentication token. There is no way to ensure correctness of later decryption
+    /// if the message gets corrupted or misplaced.
     pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         encrypt_context_imprint(self.0.master_key(), message.as_ref(), self.0.user_context())
     }
 
+    /// Decrypts the ciphertext and returns the original message.
+    ///
+    /// Note that in context imprint mode the messages do not include any authentication token
+    /// for validation, thus the returned message might not be the original one even if has been
+    /// decrypted successfully.
     pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
         decrypt_context_imprint(self.0.master_key(), message.as_ref(), self.0.user_context())
     }

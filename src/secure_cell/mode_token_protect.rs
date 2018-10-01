@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! _Token Protect_ mode of Secure Cell.
+//!
+//! See top-level module documentation for details.
+
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -49,6 +53,7 @@ extern "C" {
     ) -> themis_status_t;
 }
 
+/// Secure Cell in a _token protect_ operation mode.
 pub struct SecureCellTokenProtect<K, C>(pub(crate) SecureCell<K, C>);
 
 impl<K, C> SecureCellTokenProtect<K, C>
@@ -56,10 +61,18 @@ where
     K: AsRef<[u8]>,
     C: AsRef<[u8]>,
 {
+    /// Encrypts the provided message and returns the ciphertext with authentication token.
+    ///
+    /// The ciphertext and authentication token could be stored or transmitted separately.
+    /// You will need to provide both later for successful decryption.
     pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<(Vec<u8>, Vec<u8>), Error> {
         encrypt_token_protect(self.0.master_key(), self.0.user_context(), message.as_ref())
     }
 
+    /// Decrypts the ciphertext then validates and returns the original message.
+    ///
+    /// You need to provide both the ciphertext and the authentication token previously obtained
+    /// from `encrypt()`. Decryption will fail if any of them is corrupted or invalid.
     pub fn decrypt<M: AsRef<[u8]>, T: AsRef<[u8]>>(
         &self,
         message: M,

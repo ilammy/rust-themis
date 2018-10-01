@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Generating key material.
+//!
+//! This module contains functions for generating random key pairs for use by Themis.
+//!
+//! Currently Themis supports two key types: RSA and ECDSA. Most of the functions accept either,
+//! but some work only with ECDSA. The resulting keys are faceless byte blobs so pay attention.
+//!
+//! These functions should never fail unless something really bad is happening to your computer.
+
 use std::ptr;
 
 use libc::{size_t, uint8_t};
@@ -35,7 +44,7 @@ extern "C" {
     ) -> themis_status_t;
 }
 
-/// Generate a pair of private-public RSA keys.
+/// Generates a private-public pair of RSA keys.
 pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
@@ -78,7 +87,7 @@ pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     Ok((private_key, public_key))
 }
 
-/// Generate a pair of private-public ECDSA keys.
+/// Generates a private-public pair of ECDSA keys.
 pub fn gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();

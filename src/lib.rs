@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! # Themis Library
+//!
+//! Themis is a high-level cryptographic library.
+
+#![warn(missing_docs)]
+
 extern crate libc;
 
 pub mod keygen;
