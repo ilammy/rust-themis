@@ -1,0 +1,21 @@
+language: rust
+
+sudo: required
+dist: trusty
+rust: stable
+
+addons:
+  apt:
+    sources:
+    - sourceline: "deb https://pkgs.cossacklabs.com/stable/ubuntu trusty main"
+      key_url: "https://pkgs.cossacklabs.com/gpg"
+    packages:
+    - libthemis-dev
+
+branches:
+  except:
+  - wip/*
+
+env:
+  global:
+  - RUSTFLAGS="-D warnings"
