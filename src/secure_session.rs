@@ -99,7 +99,7 @@ struct secure_session_user_callbacks_t {
 
 pub struct SecureSession<T> {
     session_ctx: *mut secure_session_t,
-    delegate: Box<SecureSessionDelegate<T>>,
+    _delegate: Box<SecureSessionDelegate<T>>,
 }
 
 #[allow(unused_variables)]
@@ -170,7 +170,7 @@ where
 
         Some(Self {
             session_ctx,
-            delegate,
+            _delegate: delegate,
         })
     }
 
