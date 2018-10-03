@@ -19,3 +19,15 @@ branches:
 env:
   global:
   - RUSTFLAGS="-D warnings"
+
+install:
+- rustup component add clippy-preview
+- rustup component add rustfmt-preview
+- cargo install cargo-deadlinks
+
+script:
+- cargo fmt -- --check
+- cargo build
+- cargo clippy
+- cargo test
+- cargo clean --doc && cargo doc --no-deps && cargo deadlinks
