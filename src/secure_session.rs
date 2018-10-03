@@ -533,10 +533,8 @@ impl<D> Drop for SecureSession<D> {
         unsafe {
             let status = secure_session_destroy(self.session_ctx);
             let error = Error::from_session_status(status);
-            if error.kind() != ErrorKind::Success {
-                if cfg!(debug) || cfg!(test) {
-                    panic!("secure_session_destroy() failed: {}", error);
-                }
+            if (cfg!(debug) || cfg!(test)) && error.kind() != ErrorKind::Success {
+                panic!("secure_session_destroy() failed: {}", error);
             }
         }
     }

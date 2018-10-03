@@ -177,10 +177,8 @@ impl Drop for SecureComparator {
         unsafe {
             let status = secure_comparator_destroy(self.comp_ctx);
             let error = Error::from_themis_status(status);
-            if error.kind() != ErrorKind::Success {
-                if cfg!(test) || cfg!(debug) {
-                    panic!("secure_comparator_destroy() failed: {}", error);
-                }
+            if (cfg!(debug) || cfg!(test)) && error.kind() != ErrorKind::Success {
+                panic!("secure_comparator_destroy() failed: {}", error);
             }
         }
     }
