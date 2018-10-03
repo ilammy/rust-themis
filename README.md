@@ -15,7 +15,7 @@ Then you simply add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-themis = "0.1.0"
+themis = "0.0.1"
 ```
 
 And you're ready to go.

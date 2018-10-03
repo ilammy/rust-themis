@@ -1,6 +1,6 @@
 [package]
 name = "themis"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["rust-themis developers"]
 description = "High-level cryptographic services for storage and messaging"
 homepage = "https://www.cossacklabs.com/themis/"

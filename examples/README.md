@@ -17,7 +17,7 @@ You can run the examples with Cargo like this:
 
 ```
 $ cargo run --example keygen -- --help
-keygen 0.1.0
+keygen 0.0.1
 Generating private-public ECDSA key pairs.
 
 USAGE:

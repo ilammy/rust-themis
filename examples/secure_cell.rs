@@ -22,7 +22,7 @@ use std::io::{self, Read, Write};
 use themis::secure_cell::SecureCell;
 
 fn main() {
-    let matches = clap_app!(keygen =>
+    let matches = clap_app!(secure_cell =>
         (version: env!("CARGO_PKG_VERSION"))
         (about: "Simple encryption with Secure Cell.")
         (@group mode =>
