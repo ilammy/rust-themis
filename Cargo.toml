@@ -14,9 +14,6 @@ links = "themis"
 [badges]
 travis-ci = { repository = "ilammy/rust-themis" }
 
-[dependencies]
-libc = "0.2"
-
 [dev-dependencies]
 clap = "2.32"
 log = "0.4.5"

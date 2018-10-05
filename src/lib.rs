@@ -18,8 +18,6 @@
 
 #![warn(missing_docs)]
 
-extern crate libc;
-
 pub mod keygen;
 pub mod secure_cell;
 pub mod secure_comparator;

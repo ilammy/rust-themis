@@ -18,11 +18,9 @@
 
 use std::ptr;
 
-use libc::{size_t, uint8_t};
-
 /// Splits a slice into raw pointer and length for C code to use.
-pub fn into_raw_parts(slice: &[u8]) -> (*const uint8_t, size_t) {
-    let len = slice.len() as size_t;
+pub fn into_raw_parts(slice: &[u8]) -> (*const u8, usize) {
+    let len = slice.len();
     let ptr = if len == 0 {
         ptr::null()
     } else {

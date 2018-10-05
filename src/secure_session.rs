@@ -17,10 +17,8 @@
 //! **Secure Session** is a lightweight mechanism for securing any kind of network communication
 //! (both private and public networks, including the Internet).
 
-use std::os::raw::c_void;
+use std::os::raw::{c_int, c_void};
 use std::{ptr, slice};
-
-use libc::{c_int, size_t, ssize_t, uint8_t};
 
 use bindings::{
     secure_session_connect, secure_session_create, secure_session_destroy,
@@ -563,32 +561,32 @@ where
     }
 
     unsafe extern "C" fn send_data(
-        data_ptr: *const uint8_t,
-        data_len: size_t,
+        data_ptr: *const u8,
+        data_len: usize,
         user_data: *mut c_void,
-    ) -> ssize_t {
+    ) -> isize {
         let data = byte_slice_from_ptr(data_ptr, data_len);
         let transport = Self::transport(user_data);
 
         transport
             .send_data(data)
             .ok()
-            .and_then(as_ssize)
+            .and_then(as_isize)
             .unwrap_or(-1)
     }
 
     unsafe extern "C" fn receive_data(
-        data_ptr: *mut uint8_t,
-        data_len: size_t,
+        data_ptr: *mut u8,
+        data_len: usize,
         user_data: *mut c_void,
-    ) -> ssize_t {
+    ) -> isize {
         let data = byte_slice_from_ptr_mut(data_ptr, data_len);
         let transport = Self::transport(user_data);
 
         transport
             .receive_data(data)
             .ok()
-            .and_then(as_ssize)
+            .and_then(as_isize)
             .unwrap_or(-1)
     }
 
@@ -602,13 +600,13 @@ where
 
     unsafe extern "C" fn get_public_key_for_id(
         id_ptr: *const c_void,
-        id_len: size_t,
+        id_len: usize,
         key_ptr: *mut c_void,
-        key_len: size_t,
+        key_len: usize,
         user_data: *mut c_void,
     ) -> c_int {
-        let id = byte_slice_from_ptr(id_ptr as *const uint8_t, id_len);
-        let key = byte_slice_from_ptr_mut(key_ptr as *mut uint8_t, key_len);
+        let id = byte_slice_from_ptr(id_ptr as *const u8, id_len);
+        let key = byte_slice_from_ptr_mut(key_ptr as *mut u8, key_len);
         let transport = Self::transport(user_data);
 
         if transport.get_public_key_for_id(id, key) {
@@ -632,9 +630,9 @@ impl<D> Drop for SecureSession<D> {
     }
 }
 
-fn as_ssize(n: usize) -> Option<ssize_t> {
-    if n <= ssize_t::max_value() as usize {
-        Some(n as ssize_t)
+fn as_isize(n: usize) -> Option<isize> {
+    if n <= isize::max_value() as usize {
+        Some(n as isize)
     } else {
         None
     }
@@ -644,11 +642,11 @@ fn as_ssize(n: usize) -> Option<ssize_t> {
 // and lengths. Note that empty Rust slices must *not* be constructed from a null raw pointer,
 // they should use a special value instead. This is important for some LLVM magic.
 
-fn byte_slice_from_ptr<'a>(ptr: *const uint8_t, len: size_t) -> &'a [u8] {
+fn byte_slice_from_ptr<'a>(ptr: *const u8, len: usize) -> &'a [u8] {
     unsafe { slice::from_raw_parts(escape_null_ptr(ptr as *mut u8), len) }
 }
 
-fn byte_slice_from_ptr_mut<'a>(ptr: *mut uint8_t, len: size_t) -> &'a mut [u8] {
+fn byte_slice_from_ptr_mut<'a>(ptr: *mut u8, len: usize) -> &'a mut [u8] {
     unsafe { slice::from_raw_parts_mut(escape_null_ptr(ptr), len) }
 }
 
