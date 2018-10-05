@@ -17,44 +17,16 @@
 //! **Secure Comparator** is an implementation of _Zero-Knowledge Proof_-based protocol,
 //! built around OTR SMP implementation.
 
+use std::os::raw::c_void;
 use std::ptr;
 
-use libc::{c_void, size_t, uint8_t};
-
-use error::{themis_status_t, Error, ErrorKind};
+use bindings::{
+    secure_comparator_append_secret, secure_comparator_begin_compare, secure_comparator_create,
+    secure_comparator_destroy, secure_comparator_get_result, secure_comparator_proceed_compare,
+    secure_comparator_t,
+};
+use error::{Error, ErrorKind};
 use utils::into_raw_parts;
-
-#[link(name = "themis")]
-extern "C" {
-    fn secure_comparator_create() -> *mut secure_comparator_t;
-
-    fn secure_comparator_destroy(comp_ctx: *mut secure_comparator_t) -> themis_status_t;
-
-    fn secure_comparator_append_secret(
-        comp_ctx: *mut secure_comparator_t,
-        secret_ptr: *const uint8_t,
-        secret_len: size_t,
-    ) -> themis_status_t;
-
-    fn secure_comparator_begin_compare(
-        comp_ctx: *mut secure_comparator_t,
-        compare_data_ptr: *mut uint8_t,
-        compare_data_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_comparator_proceed_compare(
-        comp_ctx: *mut secure_comparator_t,
-        peer_compare_data_ptr: *const uint8_t,
-        peer_compare_data_len: size_t,
-        compare_data_ptr: *mut uint8_t,
-        compare_data_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_comparator_get_result(comp_ctx: *const secure_comparator_t) -> themis_status_t;
-}
-
-#[allow(non_camel_case_types)]
-type secure_comparator_t = c_void;
 
 /// Secure Comparison context.
 pub struct SecureComparator {
@@ -92,7 +64,11 @@ impl SecureComparator {
         let (secret_ptr, secret_len) = into_raw_parts(secret.as_ref());
 
         unsafe {
-            let status = secure_comparator_append_secret(self.comp_ctx, secret_ptr, secret_len);
+            let status = secure_comparator_append_secret(
+                self.comp_ctx,
+                secret_ptr as *const c_void,
+                secret_len,
+            );
             let error = Error::from_compare_status(status);
             if error.kind() != ErrorKind::Success {
                 return Err(error);
@@ -133,7 +109,7 @@ impl SecureComparator {
         unsafe {
             let status = secure_comparator_begin_compare(
                 self.comp_ctx,
-                compare_data.as_mut_ptr(),
+                compare_data.as_mut_ptr() as *mut c_void,
                 &mut compare_data_len,
             );
             let error = Error::from_compare_status(status);
@@ -169,7 +145,7 @@ impl SecureComparator {
         unsafe {
             let status = secure_comparator_proceed_compare(
                 self.comp_ctx,
-                peer_compare_data_ptr,
+                peer_compare_data_ptr as *const c_void,
                 peer_compare_data_len,
                 ptr::null_mut(),
                 &mut compare_data_len,
@@ -185,9 +161,9 @@ impl SecureComparator {
         unsafe {
             let status = secure_comparator_proceed_compare(
                 self.comp_ctx,
-                peer_compare_data_ptr,
+                peer_compare_data_ptr as *const c_void,
                 peer_compare_data_len,
-                compare_data.as_mut_ptr(),
+                compare_data.as_mut_ptr() as *mut c_void,
                 &mut compare_data_len,
             );
             let error = Error::from_compare_status(status);

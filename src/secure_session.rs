@@ -17,90 +17,20 @@
 //! **Secure Session** is a lightweight mechanism for securing any kind of network communication
 //! (both private and public networks, including the Internet).
 
+use std::os::raw::c_void;
 use std::{ptr, slice};
 
-use libc::{c_int, c_void, size_t, ssize_t, uint8_t};
+use libc::{c_int, size_t, ssize_t, uint8_t};
 
+use bindings::{
+    secure_session_connect, secure_session_create, secure_session_destroy,
+    secure_session_generate_connect_request, secure_session_get_remote_id,
+    secure_session_is_established, secure_session_receive, secure_session_send, secure_session_t,
+    secure_session_unwrap, secure_session_user_callbacks_t, secure_session_wrap, STATE_ESTABLISHED,
+    STATE_IDLE, STATE_NEGOTIATING,
+};
 use error::{themis_status_t, Error, ErrorKind};
 use utils::into_raw_parts;
-
-#[link(name = "themis")]
-extern "C" {
-    fn secure_session_create(
-        id_ptr: *const uint8_t,
-        id_len: size_t,
-        key_ptr: *const uint8_t,
-        key_len: size_t,
-        user_callbacks: *const secure_session_user_callbacks_t,
-    ) -> *mut secure_session_t;
-
-    fn secure_session_destroy(session_ctx: *mut secure_session_t) -> themis_status_t;
-
-    fn secure_session_is_established(session_ctx: *const secure_session_t) -> bool;
-
-    fn secure_session_get_remote_id(
-        session_ctx: *const secure_session_t,
-        id_ptr: *mut uint8_t,
-        id_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_session_generate_connect_request(
-        session_ctx: *mut secure_session_t,
-        output_ptr: *mut uint8_t,
-        output_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_session_wrap(
-        session_ctx: *mut secure_session_t,
-        message_ptr: *const uint8_t,
-        message_len: size_t,
-        wrapped_ptr: *mut uint8_t,
-        wrapper_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_session_unwrap(
-        session_ctx: *mut secure_session_t,
-        wrapped_ptr: *const uint8_t,
-        wrapped_len: size_t,
-        message_ptr: *mut uint8_t,
-        message_len: *mut size_t,
-    ) -> themis_status_t;
-
-    fn secure_session_connect(session_ctx: *mut secure_session_t) -> themis_status_t;
-
-    fn secure_session_send(
-        session_ctx: *mut secure_session_t,
-        message_ptr: *const uint8_t,
-        message_len: size_t,
-    ) -> ssize_t;
-
-    fn secure_session_receive(
-        session_ctx: *mut secure_session_t,
-        message_ptr: *mut uint8_t,
-        message_len: size_t,
-    ) -> ssize_t;
-}
-
-#[allow(non_camel_case_types)]
-type secure_session_t = c_void;
-
-#[allow(non_camel_case_types)]
-#[repr(C)]
-struct secure_session_user_callbacks_t {
-    send_data:
-        extern "C" fn(data: *const uint8_t, length: size_t, user_data: *mut c_void) -> ssize_t,
-    receive_data:
-        extern "C" fn(data: *mut uint8_t, length: size_t, user_data: *mut c_void) -> ssize_t,
-    state_changed: extern "C" fn(event: c_int, user_data: *mut c_void),
-    get_public_key_for_id: extern "C" fn(
-        id_ptr: *const uint8_t,
-        id_len: size_t,
-        key_ptr: *mut uint8_t,
-        key_len: size_t,
-        user_data: *mut c_void,
-    ) -> c_int,
-    user_data: *mut c_void,
-}
 
 /// Secure Session context.
 pub struct SecureSession<T> {
@@ -179,17 +109,17 @@ pub enum SecureSessionState {
     /// Newly created sessions start in this state.
     Idle,
     /// Connection establishment in progress.
-    Negotiation,
+    Negotiating,
     /// Connection has been established, data exchange may commence.
     Established,
 }
 
 impl SecureSessionState {
     fn from_int(state: c_int) -> Option<Self> {
-        match state {
-            0 => Some(SecureSessionState::Idle),
-            1 => Some(SecureSessionState::Negotiation),
-            2 => Some(SecureSessionState::Established),
+        match state as u32 {
+            STATE_IDLE => Some(SecureSessionState::Idle),
+            STATE_NEGOTIATING => Some(SecureSessionState::Negotiating),
+            STATE_ESTABLISHED => Some(SecureSessionState::Established),
             _ => None,
         }
     }
@@ -218,8 +148,15 @@ where
         let delegate = SecureSessionDelegate::new(transport);
 
         let user_callbacks = delegate.user_callbacks();
-        let session_ctx =
-            unsafe { secure_session_create(id_ptr, id_len, key_ptr, key_len, user_callbacks) };
+        let session_ctx = unsafe {
+            secure_session_create(
+                id_ptr as *const c_void,
+                id_len,
+                key_ptr as *const c_void,
+                key_len,
+                user_callbacks,
+            )
+        };
 
         if session_ctx.is_null() {
             return None;
@@ -335,7 +272,7 @@ where
         unsafe {
             let status = secure_session_generate_connect_request(
                 self.session_ctx,
-                output.as_mut_ptr(),
+                output.as_mut_ptr() as *mut c_void,
                 &mut output_len,
             );
             let error = Error::from_session_status(status);
@@ -368,7 +305,7 @@ where
         unsafe {
             let status = secure_session_wrap(
                 self.session_ctx,
-                message_ptr,
+                message_ptr as *const c_void,
                 message_len,
                 ptr::null_mut(),
                 &mut wrapped_len,
@@ -384,9 +321,9 @@ where
         unsafe {
             let status = secure_session_wrap(
                 self.session_ctx,
-                message_ptr,
+                message_ptr as *const c_void,
                 message_len,
-                wrapped.as_mut_ptr(),
+                wrapped.as_mut_ptr() as *mut c_void,
                 &mut wrapped_len,
             );
             let error = Error::from_session_status(status);
@@ -416,7 +353,7 @@ where
         unsafe {
             let status = secure_session_unwrap(
                 self.session_ctx,
-                wrapped_ptr,
+                wrapped_ptr as *const c_void,
                 wrapped_len,
                 ptr::null_mut(),
                 &mut message_len,
@@ -432,9 +369,9 @@ where
         unsafe {
             let status = secure_session_unwrap(
                 self.session_ctx,
-                wrapped_ptr,
+                wrapped_ptr as *const c_void,
                 wrapped_len,
-                message.as_mut_ptr(),
+                message.as_mut_ptr() as *mut c_void,
                 &mut message_len,
             );
             let error = Error::from_session_status(status);
@@ -468,7 +405,7 @@ where
         unsafe {
             let status = secure_session_unwrap(
                 self.session_ctx,
-                wrapped_ptr,
+                wrapped_ptr as *const c_void,
                 wrapped_len,
                 ptr::null_mut(),
                 &mut message_len,
@@ -487,9 +424,9 @@ where
         unsafe {
             let status = secure_session_unwrap(
                 self.session_ctx,
-                wrapped_ptr,
+                wrapped_ptr as *const c_void,
                 wrapped_len,
-                message.as_mut_ptr(),
+                message.as_mut_ptr() as *mut c_void,
                 &mut message_len,
             );
             let error = Error::from_session_status(status);
@@ -526,7 +463,8 @@ where
         let (message_ptr, message_len) = into_raw_parts(message.as_ref());
 
         unsafe {
-            let length = secure_session_send(self.session_ctx, message_ptr, message_len);
+            let length =
+                secure_session_send(self.session_ctx, message_ptr as *const c_void, message_len);
             if length <= 21 {
                 return Err(Error::from_session_status(length as themis_status_t));
             }
@@ -550,8 +488,11 @@ where
         let mut message = Vec::with_capacity(max_len);
 
         unsafe {
-            let length =
-                secure_session_receive(self.session_ctx, message.as_mut_ptr(), message.capacity());
+            let length = secure_session_receive(
+                self.session_ctx,
+                message.as_mut_ptr() as *mut c_void,
+                message.capacity(),
+            );
             if length <= 21 {
                 return Err(Error::from_session_status(length as themis_status_t));
             }
@@ -595,10 +536,10 @@ where
     pub fn new(transport: T) -> Box<Self> {
         let mut delegate = Box::new(Self {
             callbacks: secure_session_user_callbacks_t {
-                send_data: Self::send_data,
-                receive_data: Self::receive_data,
-                state_changed: Self::state_changed,
-                get_public_key_for_id: Self::get_public_key_for_id,
+                send_data: Some(Self::send_data),
+                receive_data: Some(Self::receive_data),
+                state_changed: Some(Self::state_changed),
+                get_public_key_for_id: Some(Self::get_public_key_for_id),
                 user_data: ptr::null_mut(),
             },
             transport,
@@ -621,7 +562,7 @@ where
         unsafe { &mut *(ptr as *mut T) }
     }
 
-    extern "C" fn send_data(
+    unsafe extern "C" fn send_data(
         data_ptr: *const uint8_t,
         data_len: size_t,
         user_data: *mut c_void,
@@ -636,7 +577,7 @@ where
             .unwrap_or(-1)
     }
 
-    extern "C" fn receive_data(
+    unsafe extern "C" fn receive_data(
         data_ptr: *mut uint8_t,
         data_len: size_t,
         user_data: *mut c_void,
@@ -651,7 +592,7 @@ where
             .unwrap_or(-1)
     }
 
-    extern "C" fn state_changed(event: c_int, user_data: *mut c_void) {
+    unsafe extern "C" fn state_changed(event: c_int, user_data: *mut c_void) {
         let transport = Self::transport(user_data);
 
         if let Some(state) = SecureSessionState::from_int(event) {
@@ -659,15 +600,15 @@ where
         }
     }
 
-    extern "C" fn get_public_key_for_id(
-        id_ptr: *const uint8_t,
+    unsafe extern "C" fn get_public_key_for_id(
+        id_ptr: *const c_void,
         id_len: size_t,
-        key_ptr: *mut uint8_t,
+        key_ptr: *mut c_void,
         key_len: size_t,
         user_data: *mut c_void,
     ) -> c_int {
-        let id = byte_slice_from_ptr(id_ptr, id_len);
-        let key = byte_slice_from_ptr_mut(key_ptr, key_len);
+        let id = byte_slice_from_ptr(id_ptr as *const uint8_t, id_len);
+        let key = byte_slice_from_ptr_mut(key_ptr as *mut uint8_t, key_len);
         let transport = Self::transport(user_data);
 
         if transport.get_public_key_for_id(id, key) {

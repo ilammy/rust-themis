@@ -18,6 +18,8 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    println!("cargo:rustc-link-lib=themis");
+
     let whitelist = "(THEMIS|themis|secure_(comparator|session)|STATE)_.*";
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")

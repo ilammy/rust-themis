@@ -23,26 +23,8 @@
 
 use std::ptr;
 
-use libc::{size_t, uint8_t};
-
-use error::{themis_status_t, Error, ErrorKind};
-
-#[link(name = "themis")]
-extern "C" {
-    fn themis_gen_rsa_key_pair(
-        private_key: *mut uint8_t,
-        private_key_length: *mut size_t,
-        public_key: *mut uint8_t,
-        public_key_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_gen_ec_key_pair(
-        private_key: *mut uint8_t,
-        private_key_length: *mut size_t,
-        public_key: *mut uint8_t,
-        public_key_length: *mut size_t,
-    ) -> themis_status_t;
-}
+use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
+use error::{Error, ErrorKind};
 
 /// Generates a private-public pair of RSA keys.
 pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {

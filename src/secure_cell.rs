@@ -20,83 +20,13 @@
 
 use std::ptr;
 
-use libc::{size_t, uint8_t};
-
-use error::{themis_status_t, Error, ErrorKind};
+use bindings::{
+    themis_secure_cell_decrypt_context_imprint, themis_secure_cell_decrypt_seal,
+    themis_secure_cell_decrypt_token_protect, themis_secure_cell_encrypt_context_imprint,
+    themis_secure_cell_encrypt_seal, themis_secure_cell_encrypt_token_protect,
+};
+use error::{Error, ErrorKind};
 use utils::into_raw_parts;
-
-#[link(name = "themis")]
-extern "C" {
-    fn themis_secure_cell_encrypt_seal(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        user_context: *const uint8_t,
-        user_context_length: size_t,
-        message: *const uint8_t,
-        message_length: size_t,
-        encrypted_message: *mut uint8_t,
-        encrypted_message_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_cell_decrypt_seal(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        user_context: *const uint8_t,
-        user_context_length: size_t,
-        encrypted_message: *const uint8_t,
-        encrypted_message_length: size_t,
-        plain_message: *mut uint8_t,
-        plain_message_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_cell_encrypt_token_protect(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        user_context: *const uint8_t,
-        user_context_length: size_t,
-        message: *const uint8_t,
-        message_length: size_t,
-        token: *mut uint8_t,
-        token_length: *mut size_t,
-        encrypted_message: *mut uint8_t,
-        encrypted_message_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_cell_decrypt_token_protect(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        user_context: *const uint8_t,
-        user_context_length: size_t,
-        encrypted_message: *const uint8_t,
-        encrypted_message_length: size_t,
-        token: *const uint8_t,
-        token_length: size_t,
-        plain_message: *mut uint8_t,
-        plain_message_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_cell_encrypt_context_imprint(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        message: *const uint8_t,
-        message_length: size_t,
-        context: *const uint8_t,
-        context_length: size_t,
-        encrypted_message: *mut uint8_t,
-        encrypted_message_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_cell_decrypt_context_imprint(
-        master_key: *const uint8_t,
-        master_key_length: size_t,
-        encrypted_message: *const uint8_t,
-        encrypted_message_length: size_t,
-        token: *const uint8_t,
-        token_length: size_t,
-        plain_message: *mut uint8_t,
-        plain_message_length: *mut size_t,
-    ) -> themis_status_t;
-}
 
 /// Basic Secure Cell.
 ///

@@ -19,35 +19,9 @@
 
 use std::ptr;
 
-use libc::{size_t, uint8_t};
-
-use error::{themis_status_t, Error, ErrorKind};
+use bindings::{themis_secure_message_unwrap, themis_secure_message_wrap};
+use error::{Error, ErrorKind};
 use utils::into_raw_parts;
-
-#[link(name = "themis")]
-extern "C" {
-    fn themis_secure_message_wrap(
-        private_key: *const uint8_t,
-        private_key_length: size_t,
-        public_key: *const uint8_t,
-        public_key_length: size_t,
-        message: *const uint8_t,
-        message_length: size_t,
-        wrapped: *mut uint8_t,
-        wrapped_length: *mut size_t,
-    ) -> themis_status_t;
-
-    fn themis_secure_message_unwrap(
-        private_key: *const uint8_t,
-        private_key_length: size_t,
-        public_key: *const uint8_t,
-        public_key_length: size_t,
-        wrapped: *const uint8_t,
-        wrapped_length: size_t,
-        message: *mut uint8_t,
-        message_length: *mut size_t,
-    ) -> themis_status_t;
-}
 
 /// Secure Message encryption.
 ///
