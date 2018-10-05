@@ -12,21 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Themis Library
-//!
-//! Themis is a high-level cryptographic library.
+extern crate libthemis_sys;
 
-#![warn(missing_docs)]
+use std::ffi::CStr;
 
-extern crate libthemis_sys as bindings;
-
-pub mod keygen;
-pub mod secure_cell;
-pub mod secure_comparator;
-pub mod secure_message;
-pub mod secure_session;
-
-mod error;
-mod utils;
-
-pub use error::{Error, ErrorKind};
+#[test]
+fn check_version() {
+    let version = unsafe { CStr::from_ptr(libthemis_sys::themis_version()) };
+    assert!(version.to_str().expect("valid UTF-8").contains("themis"));
+}

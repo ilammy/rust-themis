@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Themis Library
-//!
-//! Themis is a high-level cryptographic library.
+//! Raw FFI bindings to libthemis.
 
-#![warn(missing_docs)]
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
 
-extern crate libthemis_sys as bindings;
-
-pub mod keygen;
-pub mod secure_cell;
-pub mod secure_comparator;
-pub mod secure_message;
-pub mod secure_session;
-
-mod error;
-mod utils;
-
-pub use error::{Error, ErrorKind};
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

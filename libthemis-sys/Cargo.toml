@@ -1,25 +1,18 @@
 [package]
-name = "themis"
+name = "libthemis-sys"
 version = "0.0.1"
 authors = ["rust-themis developers"]
-description = "High-level cryptographic services for storage and messaging"
+description = "FFI binding to libthemis"
 homepage = "https://www.cossacklabs.com/themis/"
 repository = "https://github.com/ilammy/rust-themis"
 readme = "README.md"
 keywords = ["crypto", "Themis"]
 categories = ["cryptography", "api-bindings"]
 license = "Apache-2.0"
-
-[workspace]
-members = ["libthemis-sys"]
+links = "themis"
 
 [badges]
 travis-ci = { repository = "ilammy/rust-themis" }
 
-[dependencies]
-libthemis-sys = { path = "libthemis-sys", version = "=0.0.1" }
-
-[dev-dependencies]
-clap = "2.32"
-log = "0.4.5"
-env_logger = "0.5.13"
+[build-dependencies]
+bindgen = "0.42.0"
