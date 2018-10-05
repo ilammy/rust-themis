@@ -12,29 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Themis Library
-//!
-//! Themis is a high-level cryptographic library.
+extern crate bindgen;
 
-#![warn(missing_docs)]
+use std::env;
+use std::path::PathBuf;
 
-extern crate libc;
+fn main() {
+    let whitelist = "(THEMIS|themis|secure_(comparator|session)|STATE)_.*";
+    let bindings = bindgen::Builder::default()
+        .header("wrapper.h")
+        .whitelist_function(whitelist)
+        .whitelist_type(whitelist)
+        .whitelist_var(whitelist)
+        .generate()
+        .expect("generating bindings");
 
-pub mod keygen;
-pub mod secure_cell;
-pub mod secure_comparator;
-pub mod secure_message;
-pub mod secure_session;
-
-/// Raw FFI bindings to libthemis.
-#[allow(non_upper_case_globals)]
-#[allow(non_camel_case_types)]
-#[allow(non_snake_case)]
-#[allow(unused)]
-mod bindings {
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("writing bindings!");
 }
-mod error;
-mod utils;
-
-pub use error::{Error, ErrorKind};
