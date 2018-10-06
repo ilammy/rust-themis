@@ -28,6 +28,6 @@ install:
 script:
 - cargo fmt -- --check
 - cargo build
-- cargo clippy
+- cargo clippy --all-targets
 - cargo test
 - cargo clean --doc && cargo doc --no-deps && cargo deadlinks

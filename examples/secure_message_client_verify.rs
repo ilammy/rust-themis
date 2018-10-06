@@ -59,7 +59,7 @@ fn main() {
         let receive_message = || -> io::Result<()> {
             let buffer = recv(&receive_socket)?;
             let message = receive_secure.verify(&buffer).map_err(themis_as_io_error)?;
-            io::stdout().write(&message)?;
+            io::stdout().write_all(&message)?;
             Ok(())
         };
         loop {
