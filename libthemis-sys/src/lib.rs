@@ -17,7 +17,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
-
 // For some weird reasons Clippy gets run on this crate as it's a path dependency of themis.
 // This should not happen (see https://github.com/rust-lang-nursery/rust-clippy/issues/1066)
 // but until that's fixed again, disable all lints which get triggered by the code generated
