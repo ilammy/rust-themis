@@ -134,9 +134,7 @@ where
     /// ID is an arbitrary byte sequence used to identify this peer.
     ///
     /// Secure Session supports only ECDSA keys.
-    ///
-    /// Returns `None` if anything is wrong with the parameters.
-    pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Option<Self>
+    pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Result<Self, Error>
     where
         I: AsRef<[u8]>,
         K: AsRef<[u8]>,
@@ -157,10 +155,12 @@ where
         };
 
         if session_ctx.is_null() {
-            return None;
+            // Technically, this may be an allocation error but we have no way to know so just
+            // assume that the user messed up and provided invalid keys (which is more likely).
+            return Err(Error::with_kind(ErrorKind::InvalidParameter));
         }
 
-        Some(Self {
+        Ok(Self {
             session_ctx,
             _delegate: delegate,
         })

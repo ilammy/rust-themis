@@ -17,6 +17,8 @@ The version currently under development.
   `Option`. These functions may fail only on likely unrecoverable internal
   errors of Themis so now they simply panic in this case.
 
+- `SecureSession::with_transport()` now returns `Result` instead of `Option`.
+
 Version 0.0.1 — 2018-10-04
 ==========================
 

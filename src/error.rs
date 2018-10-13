@@ -42,6 +42,11 @@ pub struct Error {
 }
 
 impl Error {
+    /// Constructs a new error of given kind.
+    pub(crate) fn with_kind(kind: ErrorKind) -> Error {
+        Error { kind }
+    }
+
     /// Converts generic Themis status codes.
     pub(crate) fn from_themis_status(status: themis_status_t) -> Error {
         let kind = match status as u32 {
