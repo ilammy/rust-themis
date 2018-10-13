@@ -31,7 +31,7 @@ fn main() {
     let private_path = matches.value_of("private").unwrap_or("private.key");
     let public_path = matches.value_of("public").unwrap_or("public.key");
 
-    let (private_key, public_key) = gen_ec_key_pair().expect("key generation");
+    let (private_key, public_key) = gen_ec_key_pair();
 
     match write_file(&private_key, &private_path) {
         Ok(_) => eprintln!("wrote private key to {}", private_path),

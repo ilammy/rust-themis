@@ -107,8 +107,8 @@ impl SecureSessionTransport for ChannelTransport {
 fn no_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (private_client, public_client) = gen_ec_key_pair().unwrap();
-    let (private_server, public_server) = gen_ec_key_pair().unwrap();
+    let (private_client, public_client) = gen_ec_key_pair();
+    let (private_server, public_server) = gen_ec_key_pair();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between
@@ -176,8 +176,8 @@ fn no_transport() {
 fn with_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (private_client, public_client) = gen_ec_key_pair().unwrap();
-    let (private_server, public_server) = gen_ec_key_pair().unwrap();
+    let (private_client, public_client) = gen_ec_key_pair();
+    let (private_server, public_server) = gen_ec_key_pair();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between

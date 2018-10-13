@@ -18,8 +18,6 @@
 //!
 //! Currently Themis supports two key types: RSA and ECDSA. Most of the functions accept either,
 //! but some work only with ECDSA. The resulting keys are faceless byte blobs so pay attention.
-//!
-//! These functions should never fail unless something really bad is happening to your computer.
 
 use std::ptr;
 
@@ -27,7 +25,20 @@ use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
 use error::{Error, ErrorKind};
 
 /// Generates a private-public pair of RSA keys.
-pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
+///
+/// # Panics
+///
+/// This function may panic in case of unrecoverable errors inside the library (e.g., out-of-memory
+/// or assertion violations).
+pub fn gen_rsa_key_pair() -> (Vec<u8>, Vec<u8>) {
+    match try_gen_rsa_key_pair() {
+        Ok(keys) => keys,
+        Err(e) => panic!("themis_gen_rsa_key_pair() failed: {}", e),
+    }
+}
+
+/// Generates a private-public pair of RSA keys.
+fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;
@@ -70,7 +81,20 @@ pub fn gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
 }
 
 /// Generates a private-public pair of ECDSA keys.
-pub fn gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
+///
+/// # Panics
+///
+/// This function may panic in case of unrecoverable errors inside the library (e.g., out-of-memory
+/// or assertion violations).
+pub fn gen_ec_key_pair() -> (Vec<u8>, Vec<u8>) {
+    match try_gen_ec_key_pair() {
+        Ok(keys) => keys,
+        Err(e) => panic!("themis_gen_ec_key_pair() failed: {}", e),
+    }
+}
+
+/// Generates a private-public pair of ECDSA keys.
+fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;

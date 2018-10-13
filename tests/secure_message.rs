@@ -22,7 +22,7 @@ use themis::{
 
 #[test]
 fn mode_encrypt_decrypt() {
-    let (private, public) = gen_rsa_key_pair().unwrap();
+    let (private, public) = gen_rsa_key_pair();
     let secure = SecureMessage::new(private, public);
 
     let plaintext = b"test message please ignore";
@@ -34,7 +34,7 @@ fn mode_encrypt_decrypt() {
 
 #[test]
 fn mode_sign_verify() {
-    let (private, public) = gen_rsa_key_pair().unwrap();
+    let (private, public) = gen_rsa_key_pair();
     let sign = SecureSign::new(private);
     let verify = SecureVerify::new(public);
 
@@ -47,8 +47,8 @@ fn mode_sign_verify() {
 
 #[test]
 fn invalid_key() {
-    let (private1, public1) = gen_ec_key_pair().unwrap();
-    let (private2, public2) = gen_ec_key_pair().unwrap();
+    let (private1, public1) = gen_ec_key_pair();
+    let (private2, public2) = gen_ec_key_pair();
     let secure1 = SecureMessage::new(private1, public1);
     let secure2 = SecureMessage::new(private2, public2);
 
@@ -66,7 +66,7 @@ fn invalid_key() {
 #[test]
 #[ignore]
 fn misplaced_keys() {
-    let (private, public) = gen_rsa_key_pair().unwrap();
+    let (private, public) = gen_rsa_key_pair();
     // Note that key parameters are in wrong order.
     let secure = SecureMessage::new(public, private);
 
@@ -79,7 +79,7 @@ fn misplaced_keys() {
 
 #[test]
 fn corrupted_data() {
-    let (private, public) = gen_rsa_key_pair().unwrap();
+    let (private, public) = gen_rsa_key_pair();
     let secure = SecureMessage::new(private, public);
 
     // TODO: investigate crashes in Themis

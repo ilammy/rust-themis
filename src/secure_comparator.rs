@@ -36,15 +36,27 @@ pub struct SecureComparator {
 impl SecureComparator {
     /// Prepares for a new comparison.
     ///
-    /// Returns `None` on internal unrecoverable errors (like memory allocation).
-    pub fn new() -> Option<Self> {
+    /// # Panics
+    ///
+    /// May panic on internal unrecoverable errors (like memory allocation).
+    pub fn new() -> Self {
+        match SecureComparator::try_new() {
+            Ok(comparator) => comparator,
+            Err(e) => panic!("secure_comparator_create() failed: {}", e),
+        }
+    }
+
+    /// Prepares for a new comparison.
+    fn try_new() -> Result<Self, Error> {
         let comp_ctx = unsafe { secure_comparator_create() };
 
         if comp_ctx.is_null() {
-            return None;
+            // This function is most likely to fail on memory allocation. Some internal errors
+            // in the crypto library are also possible, but unlikely. We have no way to find out.
+            return Err(Error::with_kind(ErrorKind::NoMemory));
         }
 
-        Some(Self { comp_ctx })
+        Ok(Self { comp_ctx })
     }
 
     /// Collects the data to be compared.
@@ -194,6 +206,12 @@ impl SecureComparator {
             ErrorKind::CompareNoMatch => Ok(false),
             _ => Err(error),
         }
+    }
+}
+
+impl Default for SecureComparator {
+    fn default() -> Self {
+        SecureComparator::new()
     }
 }
 

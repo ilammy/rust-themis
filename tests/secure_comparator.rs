@@ -18,8 +18,8 @@ use themis::{secure_comparator::SecureComparator, ErrorKind};
 
 #[test]
 fn compare_matching_data() {
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1.append_secret(b"se-e-ecrets").unwrap();
     comparator2.append_secret(b"se-e-ecrets").unwrap();
@@ -36,8 +36,8 @@ fn compare_matching_data() {
 
 #[test]
 fn compare_different_data() {
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1
         .append_secret(b"far from the worn path of reason")
@@ -58,8 +58,8 @@ fn compare_different_data() {
 
 #[test]
 fn split_secrets() {
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1.append_secret(b"123").unwrap();
     comparator1.append_secret(b"456").unwrap();
@@ -77,8 +77,8 @@ fn split_secrets() {
 
 #[test]
 fn simultaneous_start() {
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1.append_secret(b"se-e-ecrets").unwrap();
     comparator2.append_secret(b"se-e-ecrets").unwrap();
@@ -101,8 +101,8 @@ fn simultaneous_start() {
 #[test]
 #[ignore]
 fn data_corruption() {
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1.append_secret(b"se-e-ecrets").unwrap();
     comparator2.append_secret(b"se-e-ecrets").unwrap();
@@ -121,8 +121,8 @@ fn data_corruption() {
 #[test]
 fn reusing_comparators() {
     // TODO: avoid reusing comparators via a better API
-    let mut comparator1 = SecureComparator::new().unwrap();
-    let mut comparator2 = SecureComparator::new().unwrap();
+    let mut comparator1 = SecureComparator::new();
+    let mut comparator2 = SecureComparator::new();
 
     comparator1.append_secret(b"test").unwrap();
     comparator2.append_secret(b"data").unwrap();
