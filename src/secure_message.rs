@@ -20,7 +20,7 @@
 use std::ptr;
 
 use bindings::{themis_secure_message_unwrap, themis_secure_message_wrap};
-use error::{Error, ErrorKind};
+use error::{Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Secure Message encryption.
@@ -46,7 +46,7 @@ where
     }
 
     /// Wraps the provided message into a secure encrypted message.
-    pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         wrap(
             self.private_key.as_ref(),
             self.public_key.as_ref(),
@@ -55,7 +55,7 @@ where
     }
 
     /// Unwraps an encrypted message back into its original form.
-    pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>, Error> {
+    pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>> {
         unwrap(
             self.private_key.as_ref(),
             self.public_key.as_ref(),
@@ -86,7 +86,7 @@ where
     }
 
     /// Securely signs a message and returns it with signature attached.
-    pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         wrap(self.private_key.as_ref(), &[], message.as_ref())
     }
 }
@@ -111,13 +111,13 @@ where
     }
 
     /// Verifies a signature and returns the original message.
-    pub fn verify<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn verify<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         unwrap(&[], self.public_key.as_ref(), message.as_ref())
     }
 }
 
 /// Wrap a message into a secure message.
-fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>> {
     let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -167,7 +167,7 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
 }
 
 /// Unwrap a secure message into a message.
-fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u8>, Error> {
+fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u8>> {
     let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
     let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped);

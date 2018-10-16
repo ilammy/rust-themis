@@ -29,4 +29,4 @@ pub mod secure_session;
 mod error;
 mod utils;
 
-pub use error::{Error, ErrorKind};
+pub use error::{Error, ErrorKind, Result};

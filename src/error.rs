@@ -16,7 +16,7 @@
 //!
 //! This module wraps Themis error types and provides useful Rust API for them.
 
-use std::{error, fmt};
+use std::{error, fmt, result};
 
 use bindings::{
     THEMIS_BUFFER_TOO_SMALL, THEMIS_DATA_CORRUPT, THEMIS_FAIL, THEMIS_INVALID_PARAMETER,
@@ -28,6 +28,9 @@ use bindings::{
 
 /// Themis status code.
 pub(crate) use bindings::themis_status_t;
+
+/// Result type for most Themis operations.
+pub type Result<T> = result::Result<T, Error>;
 
 /// The error type for most Themis operations.
 ///

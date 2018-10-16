@@ -22,7 +22,7 @@
 use std::ptr;
 
 use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
-use error::{Error, ErrorKind};
+use error::{Error, ErrorKind, Result};
 
 /// Generates a private-public pair of RSA keys.
 ///
@@ -38,7 +38,7 @@ pub fn gen_rsa_key_pair() -> (Vec<u8>, Vec<u8>) {
 }
 
 /// Generates a private-public pair of RSA keys.
-fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
+fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;
@@ -94,7 +94,7 @@ pub fn gen_ec_key_pair() -> (Vec<u8>, Vec<u8>) {
 }
 
 /// Generates a private-public pair of ECDSA keys.
-fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>), Error> {
+fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
     let mut private_key = Vec::new();
     let mut public_key = Vec::new();
     let mut private_key_len = 0;

@@ -7,6 +7,8 @@ The version currently under development.
 
 - `SecureComparator` now implements `Default`.
 
+- Type alias `themis::Result` with native Themis error is now available.
+
 ## Breaking changes
 
 - `SecureSessionState::Negotiate` enumeration variant is now properly spelled

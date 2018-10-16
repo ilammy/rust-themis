@@ -25,7 +25,7 @@ use bindings::{
     themis_secure_cell_decrypt_token_protect, themis_secure_cell_encrypt_context_imprint,
     themis_secure_cell_encrypt_seal, themis_secure_cell_encrypt_token_protect,
 };
-use error::{Error, ErrorKind};
+use error::{Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Basic Secure Cell.
@@ -115,18 +115,18 @@ where
     C: AsRef<[u8]>,
 {
     /// Encrypts and puts the provided message into a sealed cell.
-    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         encrypt_seal(self.0.master_key(), self.0.user_context(), message.as_ref())
     }
 
     /// Extracts the original message from a sealed cell.
-    pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         decrypt_seal(self.0.master_key(), self.0.user_context(), message.as_ref())
     }
 }
 
 /// Encrypts `message` with `master_key` including optional `user_context` for verification.
-fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Result<Vec<u8>> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -176,7 +176,7 @@ fn encrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Resul
 }
 
 /// Decrypts `message` with `master_key` and verifies authenticity of `user_context`.
-fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+fn decrypt_seal(master_key: &[u8], user_context: &[u8], message: &[u8]) -> Result<Vec<u8>> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -237,7 +237,7 @@ where
     ///
     /// The ciphertext and authentication token could be stored or transmitted separately.
     /// You will need to provide both later for successful decryption.
-    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<(Vec<u8>, Vec<u8>), Error> {
+    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<(Vec<u8>, Vec<u8>)> {
         encrypt_token_protect(self.0.master_key(), self.0.user_context(), message.as_ref())
     }
 
@@ -245,11 +245,7 @@ where
     ///
     /// You need to provide both the ciphertext and the authentication token previously obtained
     /// from `encrypt()`. Decryption will fail if any of them is corrupted or invalid.
-    pub fn decrypt<M: AsRef<[u8]>, T: AsRef<[u8]>>(
-        &self,
-        message: M,
-        token: T,
-    ) -> Result<Vec<u8>, Error> {
+    pub fn decrypt<M: AsRef<[u8]>, T: AsRef<[u8]>>(&self, message: M, token: T) -> Result<Vec<u8>> {
         decrypt_token_protect(
             self.0.master_key(),
             self.0.user_context(),
@@ -265,7 +261,7 @@ fn encrypt_token_protect(
     master_key: &[u8],
     user_context: &[u8],
     message: &[u8],
-) -> Result<(Vec<u8>, Vec<u8>), Error> {
+) -> Result<(Vec<u8>, Vec<u8>)> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -329,7 +325,7 @@ fn decrypt_token_protect(
     user_context: &[u8],
     message: &[u8],
     token: &[u8],
-) -> Result<Vec<u8>, Error> {
+) -> Result<Vec<u8>> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (user_context_ptr, user_context_len) = into_raw_parts(user_context);
     let (message_ptr, message_len) = into_raw_parts(message);
@@ -396,7 +392,7 @@ where
     /// The resulting message has the same length as the input data and does not contain
     /// an authentication token. There is no way to ensure correctness of later decryption
     /// if the message gets corrupted or misplaced.
-    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn encrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         encrypt_context_imprint(self.0.master_key(), message.as_ref(), self.0.user_context())
     }
 
@@ -405,17 +401,13 @@ where
     /// Note that in context imprint mode the messages do not include any authentication token
     /// for validation, thus the returned message might not be the original one even if has been
     /// decrypted successfully.
-    pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn decrypt<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         decrypt_context_imprint(self.0.master_key(), message.as_ref(), self.0.user_context())
     }
 }
 
 /// Encrypts `message` with `master_key` including optional `context`.
-fn encrypt_context_imprint(
-    master_key: &[u8],
-    message: &[u8],
-    context: &[u8],
-) -> Result<Vec<u8>, Error> {
+fn encrypt_context_imprint(master_key: &[u8], message: &[u8], context: &[u8]) -> Result<Vec<u8>> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (message_ptr, message_len) = into_raw_parts(message);
     let (context_ptr, context_len) = into_raw_parts(context);
@@ -465,11 +457,7 @@ fn encrypt_context_imprint(
 }
 
 /// Decrypts `message` with `master_key` and expected `context`, but do not verify data.
-fn decrypt_context_imprint(
-    master_key: &[u8],
-    message: &[u8],
-    context: &[u8],
-) -> Result<Vec<u8>, Error> {
+fn decrypt_context_imprint(master_key: &[u8], message: &[u8], context: &[u8]) -> Result<Vec<u8>> {
     let (master_key_ptr, master_key_len) = into_raw_parts(master_key);
     let (message_ptr, message_len) = into_raw_parts(message);
     let (context_ptr, context_len) = into_raw_parts(context);

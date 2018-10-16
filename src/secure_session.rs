@@ -18,7 +18,7 @@
 //! (both private and public networks, including the Internet).
 
 use std::os::raw::{c_int, c_void};
-use std::{ptr, slice};
+use std::{ptr, result, slice};
 
 use bindings::{
     secure_session_connect, secure_session_create, secure_session_destroy,
@@ -27,7 +27,7 @@ use bindings::{
     secure_session_unwrap, secure_session_user_callbacks_t, secure_session_wrap, STATE_ESTABLISHED,
     STATE_IDLE, STATE_NEGOTIATING,
 };
-use error::{themis_status_t, Error, ErrorKind};
+use error::{themis_status_t, Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Secure Session context.
@@ -61,7 +61,7 @@ pub trait SecureSessionTransport {
     /// [`connect`]: struct.SecureSession.html#method.connect
     /// [`negotiate_transport`]: struct.SecureSession.html#method.negotiate_transport
     /// [`send`]: struct.SecureSession.html#method.send
-    fn send_data(&mut self, data: &[u8]) -> Result<usize, ()> {
+    fn send_data(&mut self, data: &[u8]) -> result::Result<usize, ()> {
         Err(())
     }
 
@@ -76,7 +76,7 @@ pub trait SecureSessionTransport {
     ///
     /// [`negotiate_transport`]: struct.SecureSession.html#method.negotiate_transport
     /// [`receive`]: struct.SecureSession.html#method.receive
-    fn receive_data(&mut self, data: &mut [u8]) -> Result<usize, ()> {
+    fn receive_data(&mut self, data: &mut [u8]) -> result::Result<usize, ()> {
         Err(())
     }
 
@@ -134,7 +134,7 @@ where
     /// ID is an arbitrary byte sequence used to identify this peer.
     ///
     /// Secure Session supports only ECDSA keys.
-    pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Result<Self, Error>
+    pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Result<Self>
     where
         I: AsRef<[u8]>,
         K: AsRef<[u8]>,
@@ -180,7 +180,7 @@ where
     /// Returns ID of the remote peer.
     ///
     /// This method will return an error if the connection has not been established yet.
-    pub fn get_remote_id(&self) -> Result<Vec<u8>, Error> {
+    pub fn get_remote_id(&self) -> Result<Vec<u8>> {
         let mut id = Vec::new();
         let mut id_len = 0;
 
@@ -224,7 +224,7 @@ where
     /// [`state_changed`]: trait.SecureSessionTransport.html#method.state_changed
     /// [`is_established`]: struct.SecureSession.html#method.is_established
     /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
-    pub fn connect(&mut self) -> Result<(), Error> {
+    pub fn connect(&mut self) -> Result<()> {
         unsafe {
             let status = secure_session_connect(self.session_ctx);
             let error = Error::from_session_status(status);
@@ -249,7 +249,7 @@ where
     /// [`negotiate`]: struct.SecureSession.html#method.negotiate
     /// [`state_changed`]: trait.SecureSessionTransport.html#method.state_changed
     /// [`is_established`]: struct.SecureSession.html#method.is_established
-    pub fn generate_connect_request(&mut self) -> Result<Vec<u8>, Error> {
+    pub fn generate_connect_request(&mut self) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         let mut output_len = 0;
 
@@ -294,7 +294,7 @@ where
     /// This method will fail if a secure connection has not been established yet.
     ///
     /// [`unwrap`]: struct.SecureSession.html#method.unwrap
-    pub fn wrap<M: AsRef<[u8]>>(&mut self, message: M) -> Result<Vec<u8>, Error> {
+    pub fn wrap<M: AsRef<[u8]>>(&mut self, message: M) -> Result<Vec<u8>> {
         let (message_ptr, message_len) = into_raw_parts(message.as_ref());
 
         let mut wrapped = Vec::new();
@@ -342,7 +342,7 @@ where
     /// This method will fail if a secure connection has not been established yet.
     ///
     /// [wrapped]: struct.SecureSession.html#method.wrap
-    pub fn unwrap<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>, Error> {
+    pub fn unwrap<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>> {
         let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped.as_ref());
 
         let mut message = Vec::new();
@@ -394,7 +394,7 @@ where
     ///
     /// [`negotiate`]: struct.SecureSession.html#method.negotiate
     /// [`generate_connect_request`]: struct.SecureSession.html#method.generate_connect_request
-    pub fn negotiate<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>, Error> {
+    pub fn negotiate<M: AsRef<[u8]>>(&mut self, wrapped: M) -> Result<Vec<u8>> {
         let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped.as_ref());
 
         let mut message = Vec::new();
@@ -457,7 +457,7 @@ where
     /// `SecureSessionTransport`.
     ///
     /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
-    pub fn send<M: AsRef<[u8]>>(&mut self, message: M) -> Result<(), Error> {
+    pub fn send<M: AsRef<[u8]>>(&mut self, message: M) -> Result<()> {
         let (message_ptr, message_len) = into_raw_parts(message.as_ref());
 
         unsafe {
@@ -482,7 +482,7 @@ where
     /// `SecureSessionTransport`.
     ///
     /// [`receive_data`]: trait.SecureSessionTransport.html#method.receive_data
-    pub fn receive(&mut self, max_len: usize) -> Result<Vec<u8>, Error> {
+    pub fn receive(&mut self, max_len: usize) -> Result<Vec<u8>> {
         let mut message = Vec::with_capacity(max_len);
 
         unsafe {
@@ -514,7 +514,7 @@ where
     /// [`connect`]: struct.SecureSession.html#method.connect
     /// [`send_data`]: trait.SecureSessionTransport.html#method.send_data
     /// [`receive_data`]: trait.SecureSessionTransport.html#method.receive_data
-    pub fn negotiate_transport(&mut self) -> Result<(), Error> {
+    pub fn negotiate_transport(&mut self) -> Result<()> {
         unsafe {
             let result = secure_session_receive(self.session_ctx, ptr::null_mut(), 0);
             let error = Error::from_session_status(result as themis_status_t);

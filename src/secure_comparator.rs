@@ -25,7 +25,7 @@ use bindings::{
     secure_comparator_destroy, secure_comparator_get_result, secure_comparator_proceed_compare,
     secure_comparator_t,
 };
-use error::{Error, ErrorKind};
+use error::{Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Secure Comparison context.
@@ -47,7 +47,7 @@ impl SecureComparator {
     }
 
     /// Prepares for a new comparison.
-    fn try_new() -> Result<Self, Error> {
+    fn try_new() -> Result<Self> {
         let comp_ctx = unsafe { secure_comparator_create() };
 
         if comp_ctx.is_null() {
@@ -72,7 +72,7 @@ impl SecureComparator {
     /// [`append_secret`]: struct.SecureComparator.html#method.append_secret
     /// [`begin_compare`]: struct.SecureComparator.html#method.begin_compare
     /// [`get_result`]: struct.SecureComparator.html#method.get_result
-    pub fn append_secret<S: AsRef<[u8]>>(&mut self, secret: S) -> Result<(), Error> {
+    pub fn append_secret<S: AsRef<[u8]>>(&mut self, secret: S) -> Result<()> {
         let (secret_ptr, secret_len) = into_raw_parts(secret.as_ref());
 
         unsafe {
@@ -100,7 +100,7 @@ impl SecureComparator {
     /// all the data by this point.
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
-    pub fn begin_compare(&mut self) -> Result<Vec<u8>, Error> {
+    pub fn begin_compare(&mut self) -> Result<Vec<u8>> {
         let mut compare_data = Vec::new();
         let mut compare_data_len = 0;
 
@@ -148,7 +148,7 @@ impl SecureComparator {
     /// additional data should be appended while the comparison is underway.
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
-    pub fn proceed_compare<D: AsRef<[u8]>>(&mut self, peer_data: D) -> Result<Vec<u8>, Error> {
+    pub fn proceed_compare<D: AsRef<[u8]>>(&mut self, peer_data: D) -> Result<Vec<u8>> {
         let (peer_compare_data_ptr, peer_compare_data_len) = into_raw_parts(peer_data.as_ref());
 
         let mut compare_data = Vec::new();
@@ -198,7 +198,7 @@ impl SecureComparator {
     ///
     /// Let it be a surprise: `true` if data has been found equal on both peers, `false` otherwise.
     /// Or an error if you call this method too early.
-    pub fn get_result(&self) -> Result<bool, Error> {
+    pub fn get_result(&self) -> Result<bool> {
         let status = unsafe { secure_comparator_get_result(self.comp_ctx) };
         let error = Error::from_match_status(status);
         match error.kind() {
