@@ -4,7 +4,9 @@ Here we have some examples of Themis usage.
   a tool for generating ECDSA keys (usable by other examples) 
 * [**secure_cell**](secure_cell.rs) —
   simple file encryption/decryption based on Secure Cell
-* secure_message_* —
+* [**secure_compare**](secure_compare.rs) —
+  zero-knowledge secret comparison based on Secure Comparator
+* <b>secure_message_*</b> —
   secure group chat implemented with Secure Messages 
   * [**secure_message_server**](secure_message_server.rs) —
     simple relay server
@@ -47,6 +49,33 @@ but most of the features expect ECDSA keys.
 
 This is a simple file encryption tool.
 It supports only seal mode of _Secure Cell_.
+
+
+## secure_compare
+
+This tool can be used to compare secrets over network
+without actually sharing them.
+It is made possible by _Secure Comparator_.
+
+The tool includes both the server and the client
+selectable via command-line.
+Both accept the secrets on the _standard input_
+and start comparison after input is complete
+(use Ctrl-D in a typical terminal for this).
+
+Typical comparison session looks like this:
+
+```console
+$ echo "secret" | cargo run --example secure_compare -- server
+[+] match OK
+```
+
+```console
+$ cargo run --example secure_compare -- client
+secret
+^D
+[+] match OK
+```
 
 
 ## secure_message

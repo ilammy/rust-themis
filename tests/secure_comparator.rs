@@ -30,6 +30,9 @@ fn compare_matching_data() {
     let data = comparator2.proceed_compare(&data).unwrap();
     let _ata = comparator1.proceed_compare(&data).unwrap();
 
+    assert!(comparator1.is_complete());
+    assert!(comparator2.is_complete());
+
     assert!(comparator1.get_result().unwrap());
     assert!(comparator2.get_result().unwrap());
 }
@@ -38,6 +41,9 @@ fn compare_matching_data() {
 fn compare_different_data() {
     let mut comparator1 = SecureComparator::new();
     let mut comparator2 = SecureComparator::new();
+
+    assert!(!comparator1.is_complete());
+    assert!(!comparator2.is_complete());
 
     comparator1
         .append_secret(b"far from the worn path of reason")
@@ -91,6 +97,9 @@ fn simultaneous_start() {
 
     assert_eq!(error1.kind(), ErrorKind::InvalidParameter);
     assert_eq!(error2.kind(), ErrorKind::InvalidParameter);
+
+    assert!(!comparator1.is_complete());
+    assert!(!comparator2.is_complete());
 }
 
 // TODO: write some robust test for data corruption

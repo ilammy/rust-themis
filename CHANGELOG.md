@@ -9,6 +9,8 @@ The version currently under development.
 
 - Type alias `themis::Result` with native Themis error is now available.
 
+- `SecureComparator` now provides `is_complete()` method.
+
 ## Breaking changes
 
 - `SecureSessionState::Negotiate` enumeration variant is now properly spelled

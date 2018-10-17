@@ -140,14 +140,14 @@ impl SecureComparator {
     /// This method should be called by the responding server with a message received from the
     /// client. It returns another message which should be passed back to the client and put
     /// into its [`proceed_compare`] method (that is, this method again). The client then should
-    /// do the same. The process repeats until the comparison is complete.
-    ///
-    //  TODO: research and document when the comparison is considered complete
+    /// do the same. The process repeats at both sides until [`is_complete`] signals that the
+    /// comparison is complete.
     ///
     /// Both peers should have appended all the compared data before using this method, and no
     /// additional data should be appended while the comparison is underway.
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
+    /// [`is_complete`]: struct.SecureComparator.html#method.is_complete
     pub fn proceed_compare<D: AsRef<[u8]>>(&mut self, peer_data: D) -> Result<Vec<u8>> {
         let (peer_compare_data_ptr, peer_compare_data_len) = into_raw_parts(peer_data.as_ref());
 
@@ -205,6 +205,16 @@ impl SecureComparator {
             ErrorKind::CompareMatch => Ok(true),
             ErrorKind::CompareNoMatch => Ok(false),
             _ => Err(error),
+        }
+    }
+
+    /// Checks if this comparison is complete.
+    ///
+    /// Comparison that failed irrecoverably due to an error is also considered complete.
+    pub fn is_complete(&self) -> bool {
+        match self.get_result() {
+            Err(ref e) if e.kind() == ErrorKind::CompareNotReady => false,
+            _ => true,
         }
     }
 }
