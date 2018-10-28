@@ -11,6 +11,10 @@ The version currently under development.
 
 - `SecureComparator` now provides `is_complete()` method.
 
+- `SecureCell` and `SecureMessage` now own the provided keys, which will be
+  copied if necessary. This relaxes lifetime restrictions on instances
+  constructed using byte slices.
+
 ## Breaking changes
 
 - `SecureSessionState::Negotiate` enumeration variant is now properly spelled

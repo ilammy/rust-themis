@@ -21,35 +21,31 @@ use std::ptr;
 
 use bindings::{themis_secure_message_unwrap, themis_secure_message_wrap};
 use error::{Error, ErrorKind, Result};
-use utils::into_raw_parts;
+use utils::{into_raw_parts, KeyBytes};
 
 /// Secure Message encryption.
 ///
 /// Messages produced by this object will be encrypted and verified for integrity.
 #[derive(Clone)]
-pub struct SecureMessage<D, E> {
-    secret_key: D,
-    public_key: E,
+pub struct SecureMessage {
+    secret_key: KeyBytes,
+    public_key: KeyBytes,
 }
 
-impl<D, E> SecureMessage<D, E>
-where
-    D: AsRef<[u8]>,
-    E: AsRef<[u8]>,
-{
+impl SecureMessage {
     /// Makes a new Secure Message using given keys.
-    pub fn new(secret_key: D, public_key: E) -> Self {
+    pub fn new<S: AsRef<[u8]>, P: AsRef<[u8]>>(secret_key: S, public_key: P) -> Self {
         Self {
-            secret_key,
-            public_key,
+            secret_key: KeyBytes::copy_slice(secret_key.as_ref()),
+            public_key: KeyBytes::copy_slice(public_key.as_ref()),
         }
     }
 
     /// Wraps the provided message into a secure encrypted message.
     pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         wrap(
-            self.secret_key.as_ref(),
-            self.public_key.as_ref(),
+            self.secret_key.as_bytes(),
+            self.public_key.as_bytes(),
             message.as_ref(),
         )
     }
@@ -57,8 +53,8 @@ where
     /// Unwraps an encrypted message back into its original form.
     pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>> {
         unwrap(
-            self.secret_key.as_ref(),
-            self.public_key.as_ref(),
+            self.secret_key.as_bytes(),
+            self.public_key.as_bytes(),
             wrapped.as_ref(),
         )
     }
@@ -72,22 +68,21 @@ where
 ///
 /// [`SecureVerify`]: struct.SecureVerify.html
 #[derive(Clone)]
-pub struct SecureSign<D> {
-    secret_key: D,
+pub struct SecureSign {
+    secret_key: KeyBytes,
 }
 
-impl<D> SecureSign<D>
-where
-    D: AsRef<[u8]>,
-{
+impl SecureSign {
     /// Makes a new Secure Message using given secret key.
-    pub fn new(secret_key: D) -> Self {
-        Self { secret_key }
+    pub fn new<S: AsRef<[u8]>>(secret_key: S) -> Self {
+        Self {
+            secret_key: KeyBytes::copy_slice(secret_key.as_ref()),
+        }
     }
 
     /// Securely signs a message and returns it with signature attached.
     pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
-        wrap(self.secret_key.as_ref(), &[], message.as_ref())
+        wrap(self.secret_key.as_bytes(), &[], message.as_ref())
     }
 }
 
@@ -97,22 +92,21 @@ where
 ///
 /// [`SecureSign`]: struct.SecureSign.html
 #[derive(Clone)]
-pub struct SecureVerify<E> {
-    public_key: E,
+pub struct SecureVerify {
+    public_key: KeyBytes,
 }
 
-impl<E> SecureVerify<E>
-where
-    E: AsRef<[u8]>,
-{
+impl SecureVerify {
     /// Makes a new Secure Message using given public key.
-    pub fn new(public_key: E) -> Self {
-        Self { public_key }
+    pub fn new<P: AsRef<[u8]>>(public_key: P) -> Self {
+        Self {
+            public_key: KeyBytes::copy_slice(public_key.as_ref()),
+        }
     }
 
     /// Verifies a signature and returns the original message.
     pub fn verify<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
-        unwrap(&[], self.public_key.as_ref(), message.as_ref())
+        unwrap(&[], self.public_key.as_bytes(), message.as_ref())
     }
 }
 
