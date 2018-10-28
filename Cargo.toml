@@ -20,6 +20,7 @@ travis-ci = { repository = "ilammy/rust-themis" }
 libthemis-sys = { path = "libthemis-sys", version = "=0.0.1" }
 
 [dev-dependencies]
+byteorder = "1.2.7"
 clap = "2.32"
 log = "0.4.5"
 env_logger = "0.5.13"

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern crate byteorder;
 #[macro_use]
 extern crate clap;
 extern crate themis;
@@ -19,6 +20,7 @@ extern crate themis;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use themis::secure_comparator::SecureComparator;
 
 fn main() {
@@ -101,32 +103,13 @@ fn send_msg(message: &[u8], peer: &mut TcpStream) -> io::Result<()> {
             "too big message",
         ));
     }
-    send_len(message.len() as u32, peer)?;
+    peer.write_u32::<LittleEndian>(message.len() as u32)?;
     peer.write_all(&message)
 }
 
-fn send_len(mut len: u32, peer: &mut TcpStream) -> io::Result<()> {
-    let mut bytes = [0; 4];
-    for i in 0..4 {
-        bytes[i] = (len & 0xFF) as u8;
-        len = len >> 8;
-    }
-    peer.write_all(&bytes)
-}
-
 fn receive_msg(peer: &mut TcpStream) -> io::Result<Vec<u8>> {
-    let len = receive_len(peer)? as usize;
-    let mut msg = vec![0; len];
+    let len = peer.read_u32::<LittleEndian>()?;
+    let mut msg = vec![0; len as usize];
     peer.read_exact(&mut msg)?;
     Ok(msg)
-}
-
-fn receive_len(peer: &mut TcpStream) -> io::Result<u32> {
-    let mut bytes = [0; 4];
-    peer.read_exact(&mut bytes)?;
-    let mut len = 0;
-    for i in 0..4 {
-        len = (len << 8) | (bytes[3 - i] as u32);
-    }
-    Ok(len)
 }
