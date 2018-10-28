@@ -28,24 +28,3 @@ pub fn into_raw_parts(slice: &[u8]) -> (*const u8, usize) {
     };
     (ptr, len)
 }
-
-/// Key material.
-#[derive(Clone)]
-pub struct KeyBytes(Vec<u8>);
-
-impl KeyBytes {
-    /// Makes a key from a copy of a byte slice.
-    pub fn copy_slice(bytes: &[u8]) -> KeyBytes {
-        KeyBytes(bytes.to_vec())
-    }
-
-    /// Makes an empty key.
-    pub fn empty() -> KeyBytes {
-        KeyBytes(Vec::new())
-    }
-
-    /// Returns key bytes.
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
-}

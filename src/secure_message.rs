@@ -21,7 +21,8 @@ use std::ptr;
 
 use bindings::{themis_secure_message_unwrap, themis_secure_message_wrap};
 use error::{Error, ErrorKind, Result};
-use utils::{into_raw_parts, KeyBytes};
+use keys::KeyBytes;
+use utils::into_raw_parts;
 
 /// Secure Message encryption.
 ///

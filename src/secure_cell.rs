@@ -26,7 +26,8 @@ use bindings::{
     themis_secure_cell_encrypt_seal, themis_secure_cell_encrypt_token_protect,
 };
 use error::{Error, ErrorKind, Result};
-use utils::{into_raw_parts, KeyBytes};
+use keys::KeyBytes;
+use utils::into_raw_parts;
 
 /// Basic Secure Cell.
 ///

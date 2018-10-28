@@ -21,6 +21,7 @@
 extern crate libthemis_sys as bindings;
 
 pub mod keygen;
+pub mod keys;
 pub mod secure_cell;
 pub mod secure_comparator;
 pub mod secure_message;
