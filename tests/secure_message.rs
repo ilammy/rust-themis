@@ -22,8 +22,8 @@ use themis::{
 
 #[test]
 fn mode_encrypt_decrypt() {
-    let (private, public) = gen_rsa_key_pair();
-    let secure = SecureMessage::new(private, public);
+    let (secret, public) = gen_rsa_key_pair();
+    let secure = SecureMessage::new(secret, public);
 
     let plaintext = b"test message please ignore";
     let wrapped = secure.wrap(&plaintext).expect("encryption");
@@ -34,8 +34,8 @@ fn mode_encrypt_decrypt() {
 
 #[test]
 fn mode_sign_verify() {
-    let (private, public) = gen_rsa_key_pair();
-    let sign = SecureSign::new(private);
+    let (secret, public) = gen_rsa_key_pair();
+    let sign = SecureSign::new(secret);
     let verify = SecureVerify::new(public);
 
     let plaintext = b"test message please ignore";
@@ -47,10 +47,10 @@ fn mode_sign_verify() {
 
 #[test]
 fn invalid_key() {
-    let (private1, public1) = gen_ec_key_pair();
-    let (private2, public2) = gen_ec_key_pair();
-    let secure1 = SecureMessage::new(private1, public1);
-    let secure2 = SecureMessage::new(private2, public2);
+    let (secret1, public1) = gen_ec_key_pair();
+    let (secret2, public2) = gen_ec_key_pair();
+    let secure1 = SecureMessage::new(secret1, public1);
+    let secure2 = SecureMessage::new(secret2, public2);
 
     let plaintext = b"test message please ignore";
     let wrapped = secure1.wrap(&plaintext).expect("encryption");
@@ -60,15 +60,15 @@ fn invalid_key() {
 }
 
 // TODO: investigate crashes in Themis
-// This test crashes with SIGSEGV as Themis seems to not verify correctness of private-public
+// This test crashes with SIGSEGV as Themis seems to not verify correctness of secret-public
 // keys. Maybe we will need to use newtype idiom to make sure that keys are not misplaced, or
 // we'd better fix the crash and produce an expected error.
 #[test]
 #[ignore]
 fn misplaced_keys() {
-    let (private, public) = gen_rsa_key_pair();
+    let (secret, public) = gen_rsa_key_pair();
     // Note that key parameters are in wrong order.
-    let secure = SecureMessage::new(public, private);
+    let secure = SecureMessage::new(public, secret);
 
     let plaintext = b"test message please ignore";
     let wrapped = secure.wrap(&plaintext).expect("encryption");
@@ -79,8 +79,8 @@ fn misplaced_keys() {
 
 #[test]
 fn corrupted_data() {
-    let (private, public) = gen_rsa_key_pair();
-    let secure = SecureMessage::new(private, public);
+    let (secret, public) = gen_rsa_key_pair();
+    let secure = SecureMessage::new(secret, public);
 
     // TODO: investigate crashes in Themis
     // Using index "10" for example leads to a crash with SIGBUS, so Themis definitely

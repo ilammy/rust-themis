@@ -107,8 +107,8 @@ impl SecureSessionTransport for ChannelTransport {
 fn no_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (private_client, public_client) = gen_ec_key_pair();
-    let (private_server, public_server) = gen_ec_key_pair();
+    let (secret_client, public_client) = gen_ec_key_pair();
+    let (secret_server, public_server) = gen_ec_key_pair();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between
@@ -120,10 +120,10 @@ fn no_transport() {
 
     // The client and the server.
     let mut client =
-        SecureSession::with_transport(name_client, private_client, DummyTransport::new(&key_map))
+        SecureSession::with_transport(name_client, secret_client, DummyTransport::new(&key_map))
             .unwrap();
     let mut server =
-        SecureSession::with_transport(name_server, private_server, DummyTransport::new(&key_map))
+        SecureSession::with_transport(name_server, secret_server, DummyTransport::new(&key_map))
             .unwrap();
 
     assert!(!client.is_established());
@@ -176,8 +176,8 @@ fn no_transport() {
 fn with_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (private_client, public_client) = gen_ec_key_pair();
-    let (private_server, public_server) = gen_ec_key_pair();
+    let (secret_client, public_client) = gen_ec_key_pair();
+    let (secret_server, public_server) = gen_ec_key_pair();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between
@@ -190,9 +190,9 @@ fn with_transport() {
     // The client and the server.
     let (transport_client, transport_server) = ChannelTransport::new(&key_map);
     let mut client =
-        SecureSession::with_transport(name_client, private_client, transport_client).unwrap();
+        SecureSession::with_transport(name_client, secret_client, transport_client).unwrap();
     let mut server =
-        SecureSession::with_transport(name_server, private_server, transport_server).unwrap();
+        SecureSession::with_transport(name_server, secret_server, transport_server).unwrap();
 
     assert!(!client.is_established());
     assert!(!server.is_established());

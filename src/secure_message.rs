@@ -28,7 +28,7 @@ use utils::into_raw_parts;
 /// Messages produced by this object will be encrypted and verified for integrity.
 #[derive(Clone)]
 pub struct SecureMessage<D, E> {
-    private_key: D,
+    secret_key: D,
     public_key: E,
 }
 
@@ -38,9 +38,9 @@ where
     E: AsRef<[u8]>,
 {
     /// Makes a new Secure Message using given keys.
-    pub fn new(private_key: D, public_key: E) -> Self {
+    pub fn new(secret_key: D, public_key: E) -> Self {
         Self {
-            private_key,
+            secret_key,
             public_key,
         }
     }
@@ -48,7 +48,7 @@ where
     /// Wraps the provided message into a secure encrypted message.
     pub fn wrap<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
         wrap(
-            self.private_key.as_ref(),
+            self.secret_key.as_ref(),
             self.public_key.as_ref(),
             message.as_ref(),
         )
@@ -57,7 +57,7 @@ where
     /// Unwraps an encrypted message back into its original form.
     pub fn unwrap<M: AsRef<[u8]>>(&self, wrapped: M) -> Result<Vec<u8>> {
         unwrap(
-            self.private_key.as_ref(),
+            self.secret_key.as_ref(),
             self.public_key.as_ref(),
             wrapped.as_ref(),
         )
@@ -73,21 +73,21 @@ where
 /// [`SecureVerify`]: struct.SecureVerify.html
 #[derive(Clone)]
 pub struct SecureSign<D> {
-    private_key: D,
+    secret_key: D,
 }
 
 impl<D> SecureSign<D>
 where
     D: AsRef<[u8]>,
 {
-    /// Makes a new Secure Message using given private key.
-    pub fn new(private_key: D) -> Self {
-        Self { private_key }
+    /// Makes a new Secure Message using given secret key.
+    pub fn new(secret_key: D) -> Self {
+        Self { secret_key }
     }
 
     /// Securely signs a message and returns it with signature attached.
     pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>> {
-        wrap(self.private_key.as_ref(), &[], message.as_ref())
+        wrap(self.secret_key.as_ref(), &[], message.as_ref())
     }
 }
 
@@ -117,8 +117,8 @@ where
 }
 
 /// Wrap a message into a secure message.
-fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>> {
-    let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
+fn wrap(secret_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>> {
+    let (secret_key_ptr, secret_key_len) = into_raw_parts(secret_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
     let (message_ptr, message_len) = into_raw_parts(message);
 
@@ -127,8 +127,8 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
 
     unsafe {
         let status = themis_secure_message_wrap(
-            private_key_ptr,
-            private_key_len,
+            secret_key_ptr,
+            secret_key_len,
             public_key_ptr,
             public_key_len,
             message_ptr,
@@ -146,8 +146,8 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
 
     unsafe {
         let status = themis_secure_message_wrap(
-            private_key_ptr,
-            private_key_len,
+            secret_key_ptr,
+            secret_key_len,
             public_key_ptr,
             public_key_len,
             message_ptr,
@@ -167,8 +167,8 @@ fn wrap(private_key: &[u8], public_key: &[u8], message: &[u8]) -> Result<Vec<u8>
 }
 
 /// Unwrap a secure message into a message.
-fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u8>> {
-    let (private_key_ptr, private_key_len) = into_raw_parts(private_key);
+fn unwrap(secret_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u8>> {
+    let (secret_key_ptr, secret_key_len) = into_raw_parts(secret_key);
     let (public_key_ptr, public_key_len) = into_raw_parts(public_key);
     let (wrapped_ptr, wrapped_len) = into_raw_parts(wrapped);
 
@@ -177,8 +177,8 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
 
     unsafe {
         let status = themis_secure_message_unwrap(
-            private_key_ptr,
-            private_key_len,
+            secret_key_ptr,
+            secret_key_len,
             public_key_ptr,
             public_key_len,
             wrapped_ptr,
@@ -196,8 +196,8 @@ fn unwrap(private_key: &[u8], public_key: &[u8], wrapped: &[u8]) -> Result<Vec<u
 
     unsafe {
         let status = themis_secure_message_unwrap(
-            private_key_ptr,
-            private_key_len,
+            secret_key_ptr,
+            secret_key_len,
             public_key_ptr,
             public_key_len,
             wrapped_ptr,

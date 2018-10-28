@@ -24,7 +24,7 @@ use std::ptr;
 use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
 use error::{Error, ErrorKind, Result};
 
-/// Generates a private-public pair of RSA keys.
+/// Generates a pair of RSA keys.
 ///
 /// # Panics
 ///
@@ -37,17 +37,17 @@ pub fn gen_rsa_key_pair() -> (Vec<u8>, Vec<u8>) {
     }
 }
 
-/// Generates a private-public pair of RSA keys.
+/// Generates a secret-public pair of RSA keys.
 fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
-    let mut private_key = Vec::new();
+    let mut secret_key = Vec::new();
     let mut public_key = Vec::new();
-    let mut private_key_len = 0;
+    let mut secret_key_len = 0;
     let mut public_key_len = 0;
 
     unsafe {
         let status = themis_gen_rsa_key_pair(
             ptr::null_mut(),
-            &mut private_key_len,
+            &mut secret_key_len,
             ptr::null_mut(),
             &mut public_key_len,
         );
@@ -57,13 +57,13 @@ fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         }
     }
 
-    private_key.reserve(private_key_len);
-    public_key.reserve(private_key_len);
+    secret_key.reserve(secret_key_len);
+    public_key.reserve(secret_key_len);
 
     unsafe {
         let status = themis_gen_rsa_key_pair(
-            private_key.as_mut_ptr(),
-            &mut private_key_len,
+            secret_key.as_mut_ptr(),
+            &mut secret_key_len,
             public_key.as_mut_ptr(),
             &mut public_key_len,
         );
@@ -71,16 +71,16 @@ fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
-        debug_assert!(private_key_len <= private_key.capacity());
+        debug_assert!(secret_key_len <= secret_key.capacity());
         debug_assert!(public_key_len <= public_key.capacity());
-        private_key.set_len(private_key_len as usize);
+        secret_key.set_len(secret_key_len as usize);
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((private_key, public_key))
+    Ok((secret_key, public_key))
 }
 
-/// Generates a private-public pair of ECDSA keys.
+/// Generates a pair of ECDSA keys.
 ///
 /// # Panics
 ///
@@ -93,17 +93,17 @@ pub fn gen_ec_key_pair() -> (Vec<u8>, Vec<u8>) {
     }
 }
 
-/// Generates a private-public pair of ECDSA keys.
+/// Generates a secret-public pair of ECDSA keys.
 fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
-    let mut private_key = Vec::new();
+    let mut secret_key = Vec::new();
     let mut public_key = Vec::new();
-    let mut private_key_len = 0;
+    let mut secret_key_len = 0;
     let mut public_key_len = 0;
 
     unsafe {
         let status = themis_gen_ec_key_pair(
             ptr::null_mut(),
-            &mut private_key_len,
+            &mut secret_key_len,
             ptr::null_mut(),
             &mut public_key_len,
         );
@@ -113,13 +113,13 @@ fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         }
     }
 
-    private_key.reserve(private_key_len);
-    public_key.reserve(private_key_len);
+    secret_key.reserve(secret_key_len);
+    public_key.reserve(secret_key_len);
 
     unsafe {
         let status = themis_gen_ec_key_pair(
-            private_key.as_mut_ptr(),
-            &mut private_key_len,
+            secret_key.as_mut_ptr(),
+            &mut secret_key_len,
             public_key.as_mut_ptr(),
             &mut public_key_len,
         );
@@ -127,11 +127,11 @@ fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         if error.kind() != ErrorKind::Success {
             return Err(error);
         }
-        debug_assert!(private_key_len <= private_key.capacity());
+        debug_assert!(secret_key_len <= secret_key.capacity());
         debug_assert!(public_key_len <= public_key.capacity());
-        private_key.set_len(private_key_len as usize);
+        secret_key.set_len(secret_key_len as usize);
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((private_key, public_key))
+    Ok((secret_key, public_key))
 }

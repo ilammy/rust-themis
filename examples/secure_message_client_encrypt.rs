@@ -33,16 +33,16 @@ fn main() {
     let matches = clap_app!(secure_message_client_encrypt =>
         (version: env!("CARGO_PKG_VERSION"))
         (about: "Secure Message chat client (encrypt).")
-        (@arg private: --private [path] "Private key file (default: private.key)")
-        (@arg public : --public [path]  "Public key file (default: public.key)")
+        (@arg secret: --secret [path] "Secret key file (default: secret.key)")
+        (@arg public: --public [path] "Public key file (default: public.key)")
         (@arg address: -c --connect [addr] "Relay server address (default: localhost:7573)")
     ).get_matches();
 
-    let private_path = matches.value_of("private").unwrap_or("private.key");
+    let secret_path = matches.value_of("secret").unwrap_or("secret.key");
     let public_path = matches.value_of("public").unwrap_or("public.key");
     let remote_addr = matches.value_of("address").unwrap_or("localhost:7573");
 
-    let private_key = read_file(&private_path).expect("read private key");
+    let secret_key = read_file(&secret_path).expect("read secret key");
     let public_key = read_file(&public_path).expect("read public key");
 
     let socket = UdpSocket::bind("localhost:0").expect("client socket");
@@ -53,7 +53,7 @@ fn main() {
 
     // SecureMessage objects are stateless so they can be shared between threads without issues.
     // Also note that SecureMessage API is deliberately different from SecureSign/SecureVerify.
-    let receive_secure = Arc::new(SecureMessage::new(private_key, public_key));
+    let receive_secure = Arc::new(SecureMessage::new(secret_key, public_key));
     let relay_secure = receive_secure.clone();
 
     let receive = thread::spawn(move || {
