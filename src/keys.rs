@@ -16,6 +16,8 @@
 //!
 //! This module contains data structures for keys supported by Themis: RSA and ECDSA key pairs.
 
+use std::fmt;
+
 use error::{Error, ErrorKind, Result};
 
 /// Key material.
@@ -41,43 +43,49 @@ impl KeyBytes {
     }
 }
 
+impl fmt::Debug for KeyBytes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "KeyBytes({} bytes)", self.0.len())
+    }
+}
+
 //
 // Key type definitions
 //
 
 /// RSA secret key.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RsaSecretKey {
     inner: KeyBytes,
 }
 
 /// RSA public key.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RsaPublicKey {
     inner: KeyBytes,
 }
 
 /// RSA key pair.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RsaKeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,
 }
 
 /// ECDSA secret key.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EcdsaSecretKey {
     inner: KeyBytes,
 }
 
 /// ECDSA public key.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EcdsaPublicKey {
     inner: KeyBytes,
 }
 
 /// ECDSA key pair.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EcdsaKeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,
@@ -90,7 +98,7 @@ pub struct EcdsaKeyPair {
 ///
 /// [`RsaSecretKey`]: struct.RsaSecretKey.html
 /// [`EcdsaSecretKey`]: struct.EcdsaSecretKey.html
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SecretKey {
     inner: KeyBytes,
 }
@@ -102,7 +110,7 @@ pub struct SecretKey {
 ///
 /// [`RsaPublicKey`]: struct.RsaPublicKey.html
 /// [`EcdsaPublicKey`]: struct.EcdsaPublicKey.html
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PublicKey {
     inner: KeyBytes,
 }
@@ -118,7 +126,7 @@ pub struct PublicKey {
 /// [`EcdsaKeyPair`]: struct.EcdsaKeyPair.html
 /// [`SecretKey`]: struct.SecretKey.html
 /// [`PublicKey`]: struct.PublicKey.html
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct KeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,
