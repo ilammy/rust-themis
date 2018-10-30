@@ -16,7 +16,7 @@
 //!
 //! This module contains functions for generating random key pairs for use by Themis.
 //!
-//! Currently Themis supports two key types: RSA and ECDSA. Most of the functions accept either,
+//! Currently Themis supports two key kinds: RSA and ECDSA. Most of the functions accept either,
 //! but some work only with ECDSA. The resulting keys are faceless byte blobs so pay attention.
 
 use std::ptr;

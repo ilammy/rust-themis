@@ -93,7 +93,7 @@ pub struct EcdsaKeyPair {
 
 /// A secret key.
 ///
-/// This structure is used by cryptographic services which can support any type of key.
+/// This structure is used by cryptographic services which can support any kind of key.
 /// [`RsaSecretKey`] or [`EcdsaSecretKey`] can be turned into a `SecretKey` at no cost.
 ///
 /// [`RsaSecretKey`]: struct.RsaSecretKey.html
@@ -105,7 +105,7 @@ pub struct SecretKey {
 
 /// A public key.
 ///
-/// This structure is used by cryptographic services which can support any type of key.
+/// This structure is used by cryptographic services which can support any kind of key.
 /// [`RsaPublicKey`] or [`EcdsaPublicKey`] can be turned into a `PublicKey` at no cost.
 ///
 /// [`RsaPublicKey`]: struct.RsaPublicKey.html
@@ -117,10 +117,10 @@ pub struct PublicKey {
 
 /// A pair of asymmetric keys.
 ///
-/// This structure is used by cryptographic services which can support any type of key pair.
+/// This structure is used by cryptographic services which can support any kind of key pair.
 /// [`RsaKeyPair`] or [`EcdsaKeyPair`] can be turned into a `KeyPair` at no cost. A pair of
 /// [`SecretKey`] and [`PublicKey`] can be joined into a `KeyPair` after a quick type check
-/// if their types match (either RSA or ECDSA).
+/// if their kinds match (either RSA or ECDSA).
 ///
 /// [`RsaKeyPair`]: struct.RsaKeyPair.html
 /// [`EcdsaKeyPair`]: struct.EcdsaKeyPair.html
@@ -217,9 +217,9 @@ impl KeyPair {
     /// Note that this method _does not_ verify that the keys match: i.e., that it is possible
     /// to use the secret key to decrypt data encrypted with the public key.
     ///
-    /// However, it does verify that _the types_ of the keys match: i.e., that they are both
+    /// However, it does verify that _the kinds_ of the keys match: i.e., that they are both
     /// either RSA or ECDSA keys. An error is returned if that's not the case. You can check
-    /// the type of the key beforehand via its `kind()` method.
+    /// the kind of the key beforehand via its `kind()` method.
     pub fn try_join(secret_key: SecretKey, public_key: PublicKey) -> Result<KeyPair> {
         match (secret_key.kind(), public_key.kind()) {
             (KeyKind::RsaSecret, KeyKind::RsaPublic) => {}
@@ -240,14 +240,14 @@ impl KeyPair {
 //
 
 impl SecretKey {
-    /// Retrieves actual type of the stored key.
+    /// Retrieves actual kind of the stored key.
     pub fn kind(&self) -> KeyKind {
         unimplemented!()
     }
 }
 
 impl PublicKey {
-    /// Retrieves actual type of the stored key.
+    /// Retrieves actual kind of the stored key.
     pub fn kind(&self) -> KeyKind {
         unimplemented!()
     }
