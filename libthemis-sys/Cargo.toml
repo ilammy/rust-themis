@@ -16,3 +16,4 @@ travis-ci = { repository = "ilammy/rust-themis" }
 
 [build-dependencies]
 bindgen = "0.42.0"
+cc = "1.0"

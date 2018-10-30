@@ -18,7 +18,9 @@
 
 use std::fmt;
 
+use bindings::{themis_get_key_kind, themis_is_valid_key};
 use error::{Error, ErrorKind, Result};
+use utils::into_raw_parts;
 
 /// Key material.
 #[derive(Clone)]
@@ -220,7 +222,12 @@ impl KeyPair {
     /// However, it does verify that _the kinds_ of the keys match: i.e., that they are both
     /// either RSA or ECDSA keys. An error is returned if that's not the case. You can check
     /// the kind of the key beforehand via its `kind()` method.
-    pub fn try_join(secret_key: SecretKey, public_key: PublicKey) -> Result<KeyPair> {
+    pub fn try_join<S, P>(secret_key: S, public_key: P) -> Result<KeyPair>
+    where
+        S: Into<SecretKey>,
+        P: Into<PublicKey>,
+    {
+        let (secret_key, public_key) = (secret_key.into(), public_key.into());
         match (secret_key.kind(), public_key.kind()) {
             (KeyKind::RsaSecret, KeyKind::RsaPublic) => {}
             (KeyKind::EcdsaSecret, KeyKind::EcdsaPublic) => {}
@@ -239,17 +246,135 @@ impl KeyPair {
 // Individual keys
 //
 
+impl RsaSecretKey {
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid RSA secret key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::RsaSecret => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
+    }
+}
+
+impl RsaPublicKey {
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid RSA public key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::RsaPublic => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
+    }
+}
+
+impl EcdsaSecretKey {
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid ECDSA secret key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::EcdsaSecret => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
+    }
+}
+
+impl EcdsaPublicKey {
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid ECDSA public key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::EcdsaPublic => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
+    }
+}
+
 impl SecretKey {
     /// Retrieves actual kind of the stored key.
     pub fn kind(&self) -> KeyKind {
-        unimplemented!()
+        get_key_kind_trusted(&self.inner)
+    }
+
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid RSA or ECDSA secret key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::RsaSecret => Ok(Self { inner: key }),
+            KeyKind::EcdsaSecret => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
     }
 }
 
 impl PublicKey {
     /// Retrieves actual kind of the stored key.
     pub fn kind(&self) -> KeyKind {
-        unimplemented!()
+        get_key_kind_trusted(&self.inner)
+    }
+
+    /// Parses a key from a byte slice.
+    ///
+    /// Returns an error if the slice does not contain a valid RSA or ECDSA public key.
+    pub fn try_from_slice(bytes: &[u8]) -> Result<Self> {
+        let key = KeyBytes::copy_slice(bytes);
+        match get_key_kind(&key)? {
+            KeyKind::RsaPublic => Ok(Self { inner: key }),
+            KeyKind::EcdsaPublic => Ok(Self { inner: key }),
+            _ => Err(Error::with_kind(ErrorKind::InvalidParameter)),
+        }
+    }
+}
+
+// The following functions have to be called in a particular sequence in order to be safe to use.
+// That's why they are free functions, not methods of KeyBytes.
+//
+// You can call get_key_kind() on any byte slice. If you get an Ok result back then you can call
+// get_key_kind_trusted() again on the very same byte slice to get the result faster.
+//
+// There's also a reason why they receive &KeyBytes, not just &[u8]. This is to maintain correct
+// pointer alignment. See "libthemis-sys/src/wrapper.c" for details.
+
+fn get_key_kind(key: &KeyBytes) -> Result<KeyKind> {
+    is_valid_themis_key(key)?;
+    try_get_key_kind(key)
+}
+
+fn get_key_kind_trusted(key: &KeyBytes) -> KeyKind {
+    debug_assert!(is_valid_themis_key(key).is_ok());
+    try_get_key_kind(key).expect("get_key_kind_trusted() called for invalid key")
+}
+
+fn is_valid_themis_key(key: &KeyBytes) -> Result<()> {
+    let (ptr, len) = into_raw_parts(key.as_bytes());
+    let status = unsafe { themis_is_valid_key(ptr, len) };
+    let error = Error::from_themis_status(status);
+    if error.kind() != ErrorKind::Success {
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn try_get_key_kind(key: &KeyBytes) -> Result<KeyKind> {
+    use bindings::themis_key_kind::*;
+    let (ptr, len) = into_raw_parts(key.as_bytes());
+    let kind = unsafe { themis_get_key_kind(ptr, len) };
+    match kind {
+        THEMIS_KEY_RSA_PRIVATE => Ok(KeyKind::RsaSecret),
+        THEMIS_KEY_RSA_PUBLIC => Ok(KeyKind::RsaPublic),
+        THEMIS_KEY_EC_PRIVATE => Ok(KeyKind::EcdsaSecret),
+        THEMIS_KEY_EC_PUBLIC => Ok(KeyKind::EcdsaPublic),
+        THEMIS_KEY_INVALID => Err(Error::with_kind(ErrorKind::InvalidParameter)),
     }
 }
 

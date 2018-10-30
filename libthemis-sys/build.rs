@@ -13,19 +13,23 @@
 // limitations under the License.
 
 extern crate bindgen;
+extern crate cc;
 
 use std::env;
 use std::path::PathBuf;
 
 fn main() {
     println!("cargo:rustc-link-lib=themis");
+    println!("cargo:rustc-link-lib=themis_shims");
+    println!("cargo:rustc-link-lib=soter");
 
     let whitelist = "(THEMIS|themis|secure_(comparator|session)|STATE)_.*";
     let bindings = bindgen::Builder::default()
-        .header("wrapper.h")
+        .header("src/wrapper.h")
         .whitelist_function(whitelist)
         .whitelist_type(whitelist)
         .whitelist_var(whitelist)
+        .rustified_enum("themis_key_kind")
         .generate()
         .expect("generating bindings");
 
@@ -33,4 +37,9 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("writing bindings!");
+
+    cc::Build::new()
+        .file("src/wrapper.c")
+        .include("src")
+        .compile("themis_shims");
 }
