@@ -17,12 +17,13 @@
 //! This module contains functions for generating random key pairs for use by Themis.
 //!
 //! Currently Themis supports two key kinds: RSA and ECDSA. Most of the functions accept either,
-//! but some work only with ECDSA. The resulting keys are faceless byte blobs so pay attention.
+//! but some work only with ECDSA.
 
 use std::ptr;
 
 use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
 use error::{Error, ErrorKind, Result};
+use keys::{EcdsaKeyPair, EcdsaPublicKey, EcdsaSecretKey, RsaKeyPair, RsaPublicKey, RsaSecretKey};
 
 /// Generates a pair of RSA keys.
 ///
@@ -30,7 +31,7 @@ use error::{Error, ErrorKind, Result};
 ///
 /// This function may panic in case of unrecoverable errors inside the library (e.g., out-of-memory
 /// or assertion violations).
-pub fn gen_rsa_key_pair() -> (Vec<u8>, Vec<u8>) {
+pub fn gen_rsa_key_pair() -> RsaKeyPair {
     match try_gen_rsa_key_pair() {
         Ok(keys) => keys,
         Err(e) => panic!("themis_gen_rsa_key_pair() failed: {}", e),
@@ -38,7 +39,7 @@ pub fn gen_rsa_key_pair() -> (Vec<u8>, Vec<u8>) {
 }
 
 /// Generates a secret-public pair of RSA keys.
-fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
+fn try_gen_rsa_key_pair() -> Result<RsaKeyPair> {
     let mut secret_key = Vec::new();
     let mut public_key = Vec::new();
     let mut secret_key_len = 0;
@@ -77,7 +78,9 @@ fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((secret_key, public_key))
+    let secret_key = RsaSecretKey::from_vec(secret_key);
+    let public_key = RsaPublicKey::from_vec(public_key);
+    Ok(RsaKeyPair::join(secret_key, public_key))
 }
 
 /// Generates a pair of ECDSA keys.
@@ -86,7 +89,7 @@ fn try_gen_rsa_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
 ///
 /// This function may panic in case of unrecoverable errors inside the library (e.g., out-of-memory
 /// or assertion violations).
-pub fn gen_ec_key_pair() -> (Vec<u8>, Vec<u8>) {
+pub fn gen_ec_key_pair() -> EcdsaKeyPair {
     match try_gen_ec_key_pair() {
         Ok(keys) => keys,
         Err(e) => panic!("themis_gen_ec_key_pair() failed: {}", e),
@@ -94,7 +97,7 @@ pub fn gen_ec_key_pair() -> (Vec<u8>, Vec<u8>) {
 }
 
 /// Generates a secret-public pair of ECDSA keys.
-fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
+fn try_gen_ec_key_pair() -> Result<EcdsaKeyPair> {
     let mut secret_key = Vec::new();
     let mut public_key = Vec::new();
     let mut secret_key_len = 0;
@@ -133,5 +136,7 @@ fn try_gen_ec_key_pair() -> Result<(Vec<u8>, Vec<u8>)> {
         public_key.set_len(public_key_len as usize);
     }
 
-    Ok((secret_key, public_key))
+    let secret_key = EcdsaSecretKey::from_vec(secret_key);
+    let public_key = EcdsaPublicKey::from_vec(public_key);
+    Ok(EcdsaKeyPair::join(secret_key, public_key))
 }

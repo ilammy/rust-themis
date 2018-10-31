@@ -31,7 +31,7 @@ fn main() {
     let secret_path = matches.value_of("secret").unwrap_or("secret.key");
     let public_path = matches.value_of("public").unwrap_or("public.key");
 
-    let (secret_key, public_key) = gen_ec_key_pair();
+    let (secret_key, public_key) = gen_ec_key_pair().split();
 
     match write_file(&secret_key, &secret_path) {
         Ok(_) => eprintln!("wrote secret key to {}", secret_path),
@@ -43,8 +43,8 @@ fn main() {
     }
 }
 
-fn write_file(key: &[u8], path: &str) -> io::Result<()> {
+fn write_file<K: AsRef<[u8]>>(key: K, path: &str) -> io::Result<()> {
     let mut file = File::create(path)?;
-    file.write_all(key)?;
+    file.write_all(key.as_ref())?;
     Ok(())
 }

@@ -23,19 +23,8 @@ use themis::ErrorKind;
 
 #[test]
 fn generated_key_kinds() {
-    // TODO: replace with KeyPair::from(gen_*_key_pair()).split()
-    let (secret_ec, public_ec) = gen_ec_key_pair();
-    let (secret_rsa, public_rsa) = gen_rsa_key_pair();
-
-    let secret_ec = EcdsaSecretKey::try_from_slice(&secret_ec).expect("ECDSA secret key");
-    let public_ec = EcdsaPublicKey::try_from_slice(&public_ec).expect("ECDSA public key");
-    let secret_rsa = RsaSecretKey::try_from_slice(&secret_rsa).expect("RSA secret key");
-    let public_rsa = RsaPublicKey::try_from_slice(&public_rsa).expect("RSA public key");
-
-    let secret_ec = SecretKey::from(secret_ec);
-    let public_ec = PublicKey::from(public_ec);
-    let secret_rsa = SecretKey::from(secret_rsa);
-    let public_rsa = PublicKey::from(public_rsa);
+    let (secret_ec, public_ec) = KeyPair::from(gen_ec_key_pair()).split();
+    let (secret_rsa, public_rsa) = KeyPair::from(gen_rsa_key_pair()).split();
 
     assert_eq!(secret_ec.kind(), KeyKind::EcdsaSecret);
     assert_eq!(public_ec.kind(), KeyKind::EcdsaPublic);
@@ -64,13 +53,13 @@ fn parse_bytes() {
 
 #[test]
 fn parse_generated_keys_back() {
-    let (secret_gen, public_gen) = gen_rsa_key_pair();
+    let (secret_gen, public_gen) = gen_rsa_key_pair().split();
 
     let secret_parse = RsaSecretKey::try_from_slice(&secret_gen).expect("RSA secret key");
     let public_parse = RsaPublicKey::try_from_slice(&public_gen).expect("RSA public key");
 
-    assert_eq!(&secret_gen[..], secret_parse.as_ref());
-    assert_eq!(&public_gen[..], public_parse.as_ref());
+    assert_eq!(secret_gen, secret_parse);
+    assert_eq!(public_gen, public_parse);
 }
 
 #[test]
@@ -84,21 +73,15 @@ fn parse_invalid_buffers() {
 
 #[test]
 fn join_matching_keys() {
-    let (secret_ec, public_ec) = gen_ec_key_pair();
-
-    let secret_ec = EcdsaSecretKey::try_from_slice(&secret_ec).expect("ECDSA secret key");
-    let public_ec = EcdsaPublicKey::try_from_slice(&public_ec).expect("ECDSA public key");
+    let (secret_ec, public_ec) = gen_ec_key_pair().split();
 
     assert!(KeyPair::try_join(secret_ec, public_ec).is_ok());
 }
 
 #[test]
 fn join_mismatching_keys() {
-    let (secret_ec, _) = gen_ec_key_pair();
-    let (_, public_rsa) = gen_rsa_key_pair();
-
-    let secret_ec = EcdsaSecretKey::try_from_slice(&secret_ec).expect("ECDSA secret key");
-    let public_rsa = RsaPublicKey::try_from_slice(&public_rsa).expect("RSA public key");
+    let (secret_ec, _) = gen_ec_key_pair().split();
+    let (_, public_rsa) = gen_rsa_key_pair().split();
 
     let error = KeyPair::try_join(secret_ec, public_rsa).expect_err("kind mismatch");
     assert_eq!(error.kind(), ErrorKind::InvalidParameter);

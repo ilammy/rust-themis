@@ -107,15 +107,21 @@ impl SecureSessionTransport for ChannelTransport {
 fn no_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (secret_client, public_client) = gen_ec_key_pair();
-    let (secret_server, public_server) = gen_ec_key_pair();
+    let (secret_client, public_client) = gen_ec_key_pair().split();
+    let (secret_server, public_server) = gen_ec_key_pair().split();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between
     // the peers beforehand in some unspecified trusted way.
     let mut key_map = BTreeMap::new();
-    key_map.insert(name_client.as_bytes().to_vec(), public_client);
-    key_map.insert(name_server.as_bytes().to_vec(), public_server);
+    key_map.insert(
+        name_client.as_bytes().to_vec(),
+        public_client.as_ref().to_vec(),
+    );
+    key_map.insert(
+        name_server.as_bytes().to_vec(),
+        public_server.as_ref().to_vec(),
+    );
     let key_map = Rc::new(key_map);
 
     // The client and the server.
@@ -176,15 +182,21 @@ fn no_transport() {
 fn with_transport() {
     // Peer credentials. Secure Session supports only ECDSA.
     // TODO: tests that confirm RSA failure
-    let (secret_client, public_client) = gen_ec_key_pair();
-    let (secret_server, public_server) = gen_ec_key_pair();
+    let (secret_client, public_client) = gen_ec_key_pair().split();
+    let (secret_server, public_server) = gen_ec_key_pair().split();
     let (name_client, name_server) = ("client", "server");
 
     // Shared storage of public peer credentials. These should be communicated between
     // the peers beforehand in some unspecified trusted way.
     let mut key_map = BTreeMap::new();
-    key_map.insert(name_client.as_bytes().to_vec(), public_client);
-    key_map.insert(name_server.as_bytes().to_vec(), public_server);
+    key_map.insert(
+        name_client.as_bytes().to_vec(),
+        public_client.as_ref().to_vec(),
+    );
+    key_map.insert(
+        name_server.as_bytes().to_vec(),
+        public_server.as_ref().to_vec(),
+    );
     let key_map = Rc::new(key_map);
 
     // The client and the server.
