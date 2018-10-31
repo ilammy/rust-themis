@@ -28,6 +28,7 @@ use bindings::{
     STATE_IDLE, STATE_NEGOTIATING,
 };
 use error::{themis_status_t, Error, ErrorKind, Result};
+use keys::{EcdsaPublicKey, EcdsaSecretKey};
 use utils::into_raw_parts;
 
 /// Secure Session context.
@@ -87,9 +88,8 @@ pub trait SecureSessionTransport {
 
     /// Get a public key corresponding to a peer ID.
     ///
-    /// Look up the key and place it into the provided buffer. Return `true` if a key has been
-    /// found for the provided ID and `false` for unknown IDs.
-    fn get_public_key_for_id(&mut self, id: &[u8], key: &mut [u8]) -> bool;
+    /// Return `None` if you are unable to find a corresponding public key.
+    fn get_public_key_for_id(&mut self, id: &[u8]) -> Option<EcdsaPublicKey>;
 }
 
 // We keep this struct in a box so that it has fixed address. Themis does *not* copy
@@ -134,10 +134,9 @@ where
     /// ID is an arbitrary byte sequence used to identify this peer.
     ///
     /// Secure Session supports only ECDSA keys.
-    pub fn with_transport<I, K>(id: I, key: K, transport: T) -> Result<Self>
+    pub fn with_transport<I>(id: I, key: &EcdsaSecretKey, transport: T) -> Result<Self>
     where
         I: AsRef<[u8]>,
-        K: AsRef<[u8]>,
     {
         let (id_ptr, id_len) = into_raw_parts(id.as_ref());
         let (key_ptr, key_len) = into_raw_parts(key.as_ref());
@@ -606,14 +605,17 @@ where
         user_data: *mut c_void,
     ) -> c_int {
         let id = byte_slice_from_ptr(id_ptr as *const u8, id_len);
-        let key = byte_slice_from_ptr_mut(key_ptr as *mut u8, key_len);
+        let key_out = byte_slice_from_ptr_mut(key_ptr as *mut u8, key_len);
         let transport = Self::transport(user_data);
 
-        if transport.get_public_key_for_id(id, key) {
-            0
-        } else {
-            -1
+        if let Some(key) = transport.get_public_key_for_id(id) {
+            let key = key.as_ref();
+            if key_out.len() >= key.len() {
+                key_out[0..key.len()].copy_from_slice(key);
+                return 0;
+            }
         }
+        -1
     }
 }
 

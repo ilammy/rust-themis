@@ -22,15 +22,16 @@ use std::{
 
 use themis::{
     keygen::gen_ec_key_pair,
+    keys::EcdsaPublicKey,
     secure_session::{SecureSession, SecureSessionTransport},
 };
 
 struct DummyTransport {
-    key_map: Rc<BTreeMap<Vec<u8>, Vec<u8>>>,
+    key_map: Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>,
 }
 
 impl DummyTransport {
-    fn new(key_map: &Rc<BTreeMap<Vec<u8>, Vec<u8>>>) -> Self {
+    fn new(key_map: &Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>) -> Self {
         Self {
             key_map: key_map.clone(),
         }
@@ -38,25 +39,19 @@ impl DummyTransport {
 }
 
 impl SecureSessionTransport for DummyTransport {
-    fn get_public_key_for_id(&mut self, id: &[u8], key_out: &mut [u8]) -> bool {
-        if let Some(key) = self.key_map.get(id) {
-            assert!(key_out.len() >= key.len());
-            key_out[0..key.len()].copy_from_slice(key);
-            true
-        } else {
-            false
-        }
+    fn get_public_key_for_id(&mut self, id: &[u8]) -> Option<EcdsaPublicKey> {
+        self.key_map.get(id).cloned()
     }
 }
 
 struct ChannelTransport {
-    key_map: Rc<BTreeMap<Vec<u8>, Vec<u8>>>,
+    key_map: Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>,
     tx: Sender<Vec<u8>>,
     rx: Receiver<Vec<u8>>,
 }
 
 impl ChannelTransport {
-    fn new(key_map: &Rc<BTreeMap<Vec<u8>, Vec<u8>>>) -> (Self, Self) {
+    fn new(key_map: &Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>) -> (Self, Self) {
         let (tx12, rx21) = channel();
         let (tx21, rx12) = channel();
 
@@ -92,14 +87,8 @@ impl SecureSessionTransport for ChannelTransport {
         Ok(msg.len())
     }
 
-    fn get_public_key_for_id(&mut self, id: &[u8], key_out: &mut [u8]) -> bool {
-        if let Some(key) = self.key_map.get(id) {
-            assert!(key_out.len() >= key.len());
-            key_out[0..key.len()].copy_from_slice(key);
-            true
-        } else {
-            false
-        }
+    fn get_public_key_for_id(&mut self, id: &[u8]) -> Option<EcdsaPublicKey> {
+        self.key_map.get(id).cloned()
     }
 }
 
@@ -114,22 +103,16 @@ fn no_transport() {
     // Shared storage of public peer credentials. These should be communicated between
     // the peers beforehand in some unspecified trusted way.
     let mut key_map = BTreeMap::new();
-    key_map.insert(
-        name_client.as_bytes().to_vec(),
-        public_client.as_ref().to_vec(),
-    );
-    key_map.insert(
-        name_server.as_bytes().to_vec(),
-        public_server.as_ref().to_vec(),
-    );
+    key_map.insert(name_client.as_bytes().to_vec(), public_client);
+    key_map.insert(name_server.as_bytes().to_vec(), public_server);
     let key_map = Rc::new(key_map);
 
     // The client and the server.
     let mut client =
-        SecureSession::with_transport(name_client, secret_client, DummyTransport::new(&key_map))
+        SecureSession::with_transport(name_client, &secret_client, DummyTransport::new(&key_map))
             .unwrap();
     let mut server =
-        SecureSession::with_transport(name_server, secret_server, DummyTransport::new(&key_map))
+        SecureSession::with_transport(name_server, &secret_server, DummyTransport::new(&key_map))
             .unwrap();
 
     assert!(!client.is_established());
@@ -189,22 +172,16 @@ fn with_transport() {
     // Shared storage of public peer credentials. These should be communicated between
     // the peers beforehand in some unspecified trusted way.
     let mut key_map = BTreeMap::new();
-    key_map.insert(
-        name_client.as_bytes().to_vec(),
-        public_client.as_ref().to_vec(),
-    );
-    key_map.insert(
-        name_server.as_bytes().to_vec(),
-        public_server.as_ref().to_vec(),
-    );
+    key_map.insert(name_client.as_bytes().to_vec(), public_client);
+    key_map.insert(name_server.as_bytes().to_vec(), public_server);
     let key_map = Rc::new(key_map);
 
     // The client and the server.
     let (transport_client, transport_server) = ChannelTransport::new(&key_map);
     let mut client =
-        SecureSession::with_transport(name_client, secret_client, transport_client).unwrap();
+        SecureSession::with_transport(name_client, &secret_client, transport_client).unwrap();
     let mut server =
-        SecureSession::with_transport(name_server, secret_server, transport_server).unwrap();
+        SecureSession::with_transport(name_server, &secret_server, transport_server).unwrap();
 
     assert!(!client.is_established());
     assert!(!server.is_established());
