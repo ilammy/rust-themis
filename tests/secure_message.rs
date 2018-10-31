@@ -22,8 +22,7 @@ use themis::{
 
 #[test]
 fn mode_encrypt_decrypt() {
-    let (secret, public) = gen_rsa_key_pair().split();
-    let secure = SecureMessage::new(secret, public);
+    let secure = SecureMessage::new(gen_rsa_key_pair());
 
     let plaintext = b"test message please ignore";
     let wrapped = secure.wrap(&plaintext).expect("encryption");
@@ -47,10 +46,8 @@ fn mode_sign_verify() {
 
 #[test]
 fn invalid_key() {
-    let (secret1, public1) = gen_ec_key_pair().split();
-    let (secret2, public2) = gen_ec_key_pair().split();
-    let secure1 = SecureMessage::new(secret1, public1);
-    let secure2 = SecureMessage::new(secret2, public2);
+    let secure1 = SecureMessage::new(gen_ec_key_pair());
+    let secure2 = SecureMessage::new(gen_ec_key_pair());
 
     let plaintext = b"test message please ignore";
     let wrapped = secure1.wrap(&plaintext).expect("encryption");
@@ -59,28 +56,9 @@ fn invalid_key() {
     assert_eq!(error.kind(), ErrorKind::Fail);
 }
 
-// TODO: investigate crashes in Themis
-// This test crashes with SIGSEGV as Themis seems to not verify correctness of secret-public
-// keys. Maybe we will need to use newtype idiom to make sure that keys are not misplaced, or
-// we'd better fix the crash and produce an expected error.
-#[test]
-#[ignore]
-fn misplaced_keys() {
-    let (secret, public) = gen_rsa_key_pair().split();
-    // Note that key parameters are in wrong order.
-    let secure = SecureMessage::new(public, secret);
-
-    let plaintext = b"test message please ignore";
-    let wrapped = secure.wrap(&plaintext).expect("encryption");
-    let error = secure.unwrap(&wrapped).expect_err("decryption error");
-
-    assert_eq!(error.kind(), ErrorKind::InvalidParameter);
-}
-
 #[test]
 fn corrupted_data() {
-    let (secret, public) = gen_rsa_key_pair().split();
-    let secure = SecureMessage::new(secret, public);
+    let secure = SecureMessage::new(gen_rsa_key_pair());
 
     // TODO: investigate crashes in Themis
     // Using index "10" for example leads to a crash with SIGBUS, so Themis definitely

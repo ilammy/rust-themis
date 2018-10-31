@@ -25,6 +25,7 @@ use std::net::UdpSocket;
 use std::sync::Arc;
 use std::thread;
 
+use themis::keys::{KeyPair, PublicKey, SecretKey};
 use themis::secure_message::SecureMessage;
 
 fn main() {
@@ -43,7 +44,10 @@ fn main() {
     let remote_addr = matches.value_of("address").unwrap_or("localhost:7573");
 
     let secret_key = read_file(&secret_path).expect("read secret key");
+    let secret_key = SecretKey::try_from_slice(secret_key).expect("parse secret key");
     let public_key = read_file(&public_path).expect("read public key");
+    let public_key = PublicKey::try_from_slice(public_key).expect("parse public key");
+    let key_pair = KeyPair::try_join(secret_key, public_key).expect("matching keys");
 
     let socket = UdpSocket::bind("localhost:0").expect("client socket");
     socket.connect(&remote_addr).expect("client connection");
@@ -53,7 +57,7 @@ fn main() {
 
     // SecureMessage objects are stateless so they can be shared between threads without issues.
     // Also note that SecureMessage API is deliberately different from SecureSign/SecureVerify.
-    let receive_secure = Arc::new(SecureMessage::new(secret_key, public_key));
+    let receive_secure = Arc::new(SecureMessage::new(key_pair));
     let relay_secure = receive_secure.clone();
 
     let receive = thread::spawn(move || {

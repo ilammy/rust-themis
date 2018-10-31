@@ -207,6 +207,16 @@ impl EcdsaKeyPair {
 }
 
 impl KeyPair {
+    /// Access bytes of the secret key.
+    pub(crate) fn secret_key_bytes(&self) -> &[u8] {
+        self.secret_key.as_bytes()
+    }
+
+    /// Access bytes of the public key.
+    pub(crate) fn public_key_bytes(&self) -> &[u8] {
+        self.public_key.as_bytes()
+    }
+
     /// Splits this key pair into secret and public keys.
     pub fn split(self) -> (SecretKey, PublicKey) {
         (

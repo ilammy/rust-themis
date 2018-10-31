@@ -24,6 +24,7 @@ use std::io::{self, Read, Write};
 use std::net::UdpSocket;
 use std::thread;
 
+use themis::keys::{PublicKey, SecretKey};
 use themis::secure_message::{SecureSign, SecureVerify};
 
 fn main() {
@@ -42,7 +43,9 @@ fn main() {
     let remote_addr = matches.value_of("address").unwrap_or("localhost:7573");
 
     let secret_key = read_file(&secret_path).expect("read secret key");
+    let secret_key = SecretKey::try_from_slice(secret_key).expect("parse secret key");
     let public_key = read_file(&public_path).expect("read public key");
+    let public_key = PublicKey::try_from_slice(public_key).expect("parse public key");
 
     let socket = UdpSocket::bind("localhost:0").expect("client socket");
     socket.connect(&remote_addr).expect("client connection");
