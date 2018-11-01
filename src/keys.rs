@@ -23,7 +23,7 @@ use error::{Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Key material.
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub(crate) struct KeyBytes(Vec<u8>);
 
 // TODO: securely zero memory when dropping KeyBytes (?)
@@ -56,38 +56,38 @@ impl fmt::Debug for KeyBytes {
 //
 
 /// RSA secret key.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct RsaSecretKey {
     inner: KeyBytes,
 }
 
 /// RSA public key.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct RsaPublicKey {
     inner: KeyBytes,
 }
 
 /// RSA key pair.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct RsaKeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,
 }
 
 /// ECDSA secret key.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EcdsaSecretKey {
     inner: KeyBytes,
 }
 
 /// ECDSA public key.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EcdsaPublicKey {
     inner: KeyBytes,
 }
 
 /// ECDSA key pair.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EcdsaKeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,
@@ -100,7 +100,7 @@ pub struct EcdsaKeyPair {
 ///
 /// [`RsaSecretKey`]: struct.RsaSecretKey.html
 /// [`EcdsaSecretKey`]: struct.EcdsaSecretKey.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct SecretKey {
     inner: KeyBytes,
 }
@@ -112,7 +112,7 @@ pub struct SecretKey {
 ///
 /// [`RsaPublicKey`]: struct.RsaPublicKey.html
 /// [`EcdsaPublicKey`]: struct.EcdsaPublicKey.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct PublicKey {
     inner: KeyBytes,
 }
@@ -128,7 +128,7 @@ pub struct PublicKey {
 /// [`EcdsaKeyPair`]: struct.EcdsaKeyPair.html
 /// [`SecretKey`]: struct.SecretKey.html
 /// [`PublicKey`]: struct.PublicKey.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct KeyPair {
     secret_key: KeyBytes,
     public_key: KeyBytes,

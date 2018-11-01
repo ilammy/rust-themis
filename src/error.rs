@@ -39,7 +39,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// details.
 ///
 /// [`ErrorKind`]: enum.ErrorKind.html
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Error {
     kind: ErrorKind,
 }
