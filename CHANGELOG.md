@@ -15,6 +15,9 @@ The version currently under development.
   copied if necessary. This relaxes lifetime restrictions on instances
   constructed using byte slices.
 
+- Themis now uses strong types for keys instead of `Vec<u8>` and `&[u8]`.
+  See #4 for details. This is likely a **breaking change**.
+
 ## Breaking changes
 
 - `SecureSessionState::Negotiate` enumeration variant is now properly spelled
