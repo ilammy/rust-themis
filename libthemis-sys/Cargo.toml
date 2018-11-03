@@ -7,7 +7,7 @@ homepage = "https://www.cossacklabs.com/themis/"
 repository = "https://github.com/ilammy/rust-themis"
 readme = "README.md"
 keywords = ["crypto", "Themis"]
-categories = ["cryptography", "api-bindings"]
+categories = ["cryptography", "external-ffi-bindings"]
 license = "Apache-2.0"
 links = "themis"
 
