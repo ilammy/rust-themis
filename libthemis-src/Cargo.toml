@@ -14,3 +14,8 @@ license = "Apache-2.0"
 travis-ci = { repository = "ilammy/rust-themis" }
 
 [dependencies]
+copy_dir = "0.1.2"
+make-cmd = "0.1.0"
+
+[dev-dependencies]
+tempfile = "3.0.4"
