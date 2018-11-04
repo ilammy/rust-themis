@@ -19,6 +19,8 @@ use std::collections::HashSet;
 use std::env;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::str;
 
 fn main() {
     let (include_dir, lib_dir, libs) = get_themis();
@@ -111,9 +113,7 @@ fn probe_environment_include_lib() -> Option<(PathBuf, PathBuf, Vec<String>)> {
 
 fn probe_environment_install_dir() -> Option<(PathBuf, PathBuf, Vec<String>)> {
     if let Some(install_dir) = env_var("THEMIS_DIR").map(|s| PathBuf::from(s)) {
-        let include_dir = install_dir.join("include");
-        let lib_dir = install_dir.join("lib");
-        probe_location(&include_dir, &lib_dir)
+        probe_install_location(&install_dir)
     } else {
         None
     }
@@ -121,8 +121,28 @@ fn probe_environment_install_dir() -> Option<(PathBuf, PathBuf, Vec<String>)> {
 
 /// Tries asking Homebrew for directions if available.
 fn probe_homebrew() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    // TODO: implement
-    None
+    fn prefix(formula: &str) -> Option<PathBuf> {
+        let output = Command::new("brew")
+            .arg("--prefix")
+            .arg(formula)
+            .env("HOMEBREW_NO_AUTO_UPDATE", "1")
+            .output();
+
+        if let Ok(output) = output {
+            if output.status.success() {
+                if let Ok(path) = str::from_utf8(&output.stdout) {
+                    return Some(PathBuf::from(path.trim()));
+                }
+            }
+        }
+
+        None
+    }
+
+    None.or_else(|| prefix("themis").and_then(probe_install_location))
+        .or_else(|| prefix("themis-boringssl").and_then(probe_install_location))
+        .or_else(|| prefix("themis-openssl").and_then(probe_install_location))
+        .or_else(|| prefix("themis-libressl").and_then(probe_install_location))
 }
 
 /// Tries asking pkg-config for directions if available.
@@ -133,8 +153,15 @@ fn probe_pkg_config() -> Option<(PathBuf, PathBuf, Vec<String>)> {
 
 /// Makes a last-ditch effort with an educated guess and looks for Themis at standard locations.
 fn probe_standard_locations() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    None.or_else(|| probe_location("/usr/local/include", "/usr/local/lib"))
-        .or_else(|| probe_location("/usr/include", "/usr/lib"))
+    None.or_else(|| probe_install_location("/usr/local"))
+        .or_else(|| probe_install_location("/usr"))
+}
+
+fn probe_install_location<P: AsRef<Path>>(prefix: P) -> Option<(PathBuf, PathBuf, Vec<String>)> {
+    let prefix = prefix.as_ref();
+    let include_dir = prefix.join("include");
+    let lib_dir = prefix.join("lib");
+    probe_location(&include_dir, &lib_dir)
 }
 
 fn probe_location<I, L>(include_dir: I, lib_dir: L) -> Option<(PathBuf, PathBuf, Vec<String>)>
