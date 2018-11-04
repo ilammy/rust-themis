@@ -93,8 +93,30 @@ THEMIS_INCLUDE_DIR, THEMIS_LIB_DIR and trying again.
 
 /// Checks environment overrides for Themis locations.
 fn probe_environment() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    // TODO: implement
-    None
+    None.or_else(|| probe_environment_include_lib())
+        .or_else(|| probe_environment_install_dir())
+}
+
+fn probe_environment_include_lib() -> Option<(PathBuf, PathBuf, Vec<String>)> {
+    let include_dir = env_var("THEMIS_INCLUDE_DIR");
+    let lib_dir = env_var("THEMIS_LIB_DIR");
+    if include_dir.is_some() && lib_dir.is_some() {
+        let include_dir = include_dir.unwrap();
+        let lib_dir = lib_dir.unwrap();
+        probe_location(&include_dir, &lib_dir)
+    } else {
+        None
+    }
+}
+
+fn probe_environment_install_dir() -> Option<(PathBuf, PathBuf, Vec<String>)> {
+    if let Some(install_dir) = env_var("THEMIS_DIR").map(|s| PathBuf::from(s)) {
+        let include_dir = install_dir.join("include");
+        let lib_dir = install_dir.join("lib");
+        probe_location(&include_dir, &lib_dir)
+    } else {
+        None
+    }
 }
 
 /// Tries asking Homebrew for directions if available.
@@ -115,7 +137,11 @@ fn probe_standard_locations() -> Option<(PathBuf, PathBuf, Vec<String>)> {
         .or_else(|| probe_location("/usr/include", "/usr/lib"))
 }
 
-fn probe_location(include_dir: &str, lib_dir: &str) -> Option<(PathBuf, PathBuf, Vec<String>)> {
+fn probe_location<I, L>(include_dir: I, lib_dir: L) -> Option<(PathBuf, PathBuf, Vec<String>)>
+where
+    I: AsRef<Path>,
+    L: AsRef<Path>,
+{
     fn exists_in<P: AsRef<Path>, F: Fn(&Path) -> bool>(path: P, predicate: F) -> bool {
         if let Ok(files) = path.as_ref().read_dir() {
             files
@@ -133,8 +159,8 @@ fn probe_location(include_dir: &str, lib_dir: &str) -> Option<(PathBuf, PathBuf,
             .map_or(false, |name| name.starts_with(&prefix))
     }
 
-    let include_dir = PathBuf::from(include_dir);
-    let lib_dir = PathBuf::from(lib_dir);
+    let include_dir = PathBuf::from(include_dir.as_ref());
+    let lib_dir = PathBuf::from(lib_dir.as_ref());
     let libs = vec!["themis".to_owned(), "soter".to_owned()];
 
     if !include_dir.join("themis/themis.h").exists() {
