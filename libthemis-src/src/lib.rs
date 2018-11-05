@@ -99,6 +99,9 @@ impl Build {
         // Themis uses in-source build. Cargo requires build scripts to never write anything
         // outside of OUT_DIR so we just have to copy the source code there.
 
+        if !out_dir.exists() {
+            fs::create_dir(&out_dir).expect("mkdir themis");
+        }
         if build_dir.exists() {
             fs::remove_dir_all(&build_dir).expect("rm -r themis/build");
         }
@@ -180,6 +183,9 @@ impl Artifacts {
 mod tests {
     use super::*;
 
+    use std::env;
+    use std::ffi::OsStr;
+
     #[test]
     fn build_and_install() {
         let temp_dir = tempfile::tempdir().expect("temporary directory");
@@ -187,5 +193,31 @@ mod tests {
         assert!(artifacts.include_dir().join("themis/themis.h").exists());
         assert!(artifacts.lib_dir().read_dir().unwrap().count() > 0);
         assert!(!artifacts.libs.is_empty());
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn build_and_install_to_OUT_DIR() {
+        let temp_dir = tempfile::tempdir().expect("temporary directory");
+        let artifacts = with_env_var("OUT_DIR", temp_dir.path(), || Build::new().build());
+        assert!(artifacts.include_dir().join("themis/themis.h").exists());
+        assert!(artifacts.lib_dir().read_dir().unwrap().count() > 0);
+        assert!(!artifacts.libs.is_empty());
+    }
+
+    fn with_env_var<K, V, F, T>(key: K, value: V, f: F) -> T
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+        F: FnOnce() -> T,
+    {
+        let old_value = env::var_os(&key);
+        env::set_var(&key, value);
+        let result = f();
+        match old_value {
+            Some(old_value) => env::set_var(&key, old_value),
+            None => env::remove_var(&key),
+        }
+        result
     }
 }
