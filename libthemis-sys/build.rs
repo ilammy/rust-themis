@@ -14,6 +14,7 @@
 
 extern crate bindgen;
 extern crate cc;
+extern crate pkg_config;
 
 use std::collections::HashSet;
 use std::env;
@@ -147,8 +148,15 @@ fn probe_homebrew() -> Option<(PathBuf, PathBuf, Vec<String>)> {
 
 /// Tries asking pkg-config for directions if available.
 fn probe_pkg_config() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    // TODO: implement
-    None
+    pkg_config::Config::new()
+        .cargo_metadata(false)
+        .probe("themis")
+        .ok()
+        .and_then(|library| {
+            assert_eq!(library.include_paths.len(), 1);
+            assert_eq!(library.link_paths.len(), 1);
+            probe_location(&library.include_paths[0], &library.link_paths[0])
+        })
 }
 
 /// Makes a last-ditch effort with an educated guess and looks for Themis at standard locations.
