@@ -29,16 +29,6 @@ use std::path::{Path, PathBuf};
 #[derive(Default)]
 pub struct Build {
     out_dir: Option<PathBuf>,
-    engine: Option<Engine>,
-    engine_include_path: Option<PathBuf>,
-    engine_lib_path: Option<PathBuf>,
-}
-
-/// Backend crypto library for Themis.
-pub enum Engine {
-    BoringSSL,
-    OpenSSL,
-    LibreSSL,
 }
 
 /// Artifacts resulting from a [`Build`].
@@ -55,9 +45,6 @@ impl Build {
     pub fn new() -> Build {
         Build {
             out_dir: env::var_os("OUT_DIR").map(|s| PathBuf::from(s).join("themis")),
-            engine: None,
-            engine_include_path: None,
-            engine_lib_path: None,
         }
     }
 
@@ -65,27 +52,6 @@ impl Build {
     /// to customize the output location.
     pub fn out_dir<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         self.out_dir = Some(path.as_ref().to_path_buf());
-        self
-    }
-
-    /// Overrides the default choice of crypto library. The dependency is expected to be located
-    /// in standard system search paths.
-    pub fn use_crypto(&mut self, engine: Engine) -> &mut Self {
-        self.engine = Some(engine);
-        self
-    }
-
-    /// Overrides the default choice of crypto library and its location. Use this to point the
-    /// build at your custom installation of the cryptographic backend.
-    pub fn use_crypto_with_paths<I: AsRef<Path>, L: AsRef<Path>>(
-        &mut self,
-        engine: Engine,
-        include_dir: I,
-        lib_dir: L,
-    ) -> &mut Self {
-        self.engine = Some(engine);
-        self.engine_include_path = Some(include_dir.as_ref().to_path_buf());
-        self.engine_lib_path = Some(lib_dir.as_ref().to_path_buf());
         self
     }
 
@@ -117,27 +83,6 @@ impl Build {
         make.args(&["-C".as_ref(), build_dir.as_os_str()])
             .env("PREFIX", &install_dir)
             .arg("install");
-
-        if let Some(ref engine) = self.engine {
-            let name = match engine {
-                Engine::BoringSSL => "boringssl",
-                Engine::OpenSSL => "openssl",
-                Engine::LibreSSL => "libressl",
-            };
-            make.env("ENGINE", name);
-        } else {
-            make.env_remove("ENGINE");
-        }
-        if let Some(ref engine_include_path) = self.engine_include_path {
-            make.env("ENGINE_INCLUDE_PATH", engine_include_path);
-        } else {
-            make.env_remove("ENGINE_INCLUDE_PATH");
-        }
-        if let Some(ref engine_lib_path) = self.engine_lib_path {
-            make.env("ENGINE_LIB_PATH", engine_lib_path);
-        } else {
-            make.env_remove("ENGINE_LIB_PATH");
-        }
 
         let status = make.status().expect("make");
         if !status.success() {
