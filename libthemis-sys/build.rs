@@ -38,6 +38,7 @@ fn main() {
     let whitelist = "(THEMIS|themis|secure_(comparator|session)|STATE)_.*";
     let bindings = bindgen::Builder::default()
         .clang_arg(format!("-I{}", include_dir.display()))
+        .clang_arg(format!("-L{}", lib_dir.display()))
         .header("src/wrapper.h")
         .whitelist_function(whitelist)
         .whitelist_type(whitelist)
