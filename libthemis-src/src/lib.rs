@@ -22,7 +22,7 @@ extern crate tempfile;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// A builder (literally!) for Themis, produces [`Artifacts`].
 ///
@@ -39,6 +39,66 @@ pub struct Artifacts {
     include_dir: PathBuf,
     lib_dir: PathBuf,
     libs: Vec<String>,
+}
+
+fn check_dependencies() {
+    fn fails_to_run(terms: &[&str]) -> bool {
+        Command::new(&terms[0])
+            .args(&terms[1..])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_err()
+    }
+
+    if fails_to_run(&["cmake", "--version"]) {
+        panic!(
+            "
+
+It seems your system does not have CMake installed. CMake is required
+to build Themis from source.
+
+Please install \"cmake\" package and try again.
+
+        "
+        );
+    }
+    if fails_to_run(&["make", "--version"]) {
+        panic!(
+            "
+
+It seems your system does not have GNU make installed. Make is required
+to build Themis from source.
+
+Please install \"make\" or \"build-essential\" package and try again.
+
+        "
+        );
+    }
+    if fails_to_run(&["cc", "--version"]) {
+        panic!(
+            "
+
+It seems your system does not have a C compiler installed. C compiler
+is required to build Themis from source.
+
+Please install \"clang\" (or \"gcc\" and \"g++\") package and try again.
+
+        "
+        );
+    }
+    if fails_to_run(&["go", "version"]) {
+        panic!(
+            "
+
+It seems your system does not have Golang installed. Go is required
+to build Themis from source.
+
+Please install \"go\" or \"golang\" package and try again.
+
+        "
+        );
+    }
 }
 
 impl Build {
@@ -58,6 +118,8 @@ impl Build {
 
     /// Builds Themis, panics on any errors.
     pub fn build(&self) -> Artifacts {
+        check_dependencies();
+
         let out_dir = self.out_dir.as_ref().expect("OUT_DIR not set");
         let themis_src_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("themis");
         let themis_build_dir = out_dir.join("build");
