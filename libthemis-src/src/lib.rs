@@ -206,6 +206,8 @@ impl Build {
             .arg("install");
         if cfg!(debug) {
             themis_build_and_install.env("DEBUG", "1");
+        } else {
+            themis_build_and_install.env_remove("DEBUG");
         }
         run(themis_build_and_install, "Themis build & install");
 
