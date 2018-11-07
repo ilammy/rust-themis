@@ -18,6 +18,10 @@ The version currently under development.
 - Themis now uses strong types for keys instead of `Vec<u8>` and `&[u8]`.
   See #4 for details. This is likely a **breaking change**.
 
+- `libthemis-sys` will now use Homebrew and pkg-config to locate native
+  Themis library. It is also possible to use `vendored` feature to build
+  a vendored copy of Themis. See #2, #5 for details.
+
 ## Breaking changes
 
 - `SecureSessionState::Negotiate` enumeration variant is now properly spelled
