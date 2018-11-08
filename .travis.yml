@@ -3,6 +3,7 @@ language: rust
 sudo: required
 dist: trusty
 rust: stable
+cache: cargo
 
 addons:
   apt:
@@ -20,14 +21,31 @@ env:
   global:
   - RUSTFLAGS="-D warnings"
 
-install:
-- rustup component add clippy-preview
-- rustup component add rustfmt-preview
-- cargo install cargo-deadlinks
+jobs:
+  include:
+  - stage: Static checks
+    name: Formatting, code style, doc coverage
+    install:
+    - rustup component add clippy-preview
+    - rustup component add rustfmt-preview
+    - cargo deadlinks --version || cargo install cargo-deadlinks
+    script:
+    - cargo fmt -- --check
+    - cargo clippy --all-targets
+    - cargo clean --doc && cargo doc --no-deps && cargo deadlinks
+  - stage: Running tests
+    name: System Themis
+    script:
+    - cargo build
+    - cargo test
+  - stage: Running tests
+    name: Vendored Themis
+    script:
+    - cargo build --features "vendored"
+    - cargo test --features "vendored"
 
-script:
-- cargo fmt -- --check
-- cargo build
-- cargo clippy --all-targets
-- cargo test
-- cargo clean --doc && cargo doc --no-deps && cargo deadlinks
+matrix:
+  fast_finish: true
+  allow_failures:
+    - stage: Running tests
+      name: Vendored Themis
