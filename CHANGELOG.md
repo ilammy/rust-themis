@@ -16,11 +16,11 @@ The version currently under development.
   constructed using byte slices.
 
 - Themis now uses strong types for keys instead of `Vec<u8>` and `&[u8]`.
-  See #4 for details. This is likely a **breaking change**.
+  See [#4] for details. This is likely a **breaking change**.
 
 - `libthemis-sys` will now use Homebrew and pkg-config to locate native
   Themis library. It is also possible to use `vendored` feature to build
-  a vendored copy of Themis. See #2, #5 for details.
+  a vendored copy of Themis. See [#2], [#5] for details.
 
 ## Breaking changes
 
@@ -33,6 +33,10 @@ The version currently under development.
   errors of Themis so now they simply panic in this case.
 
 - `SecureSession::with_transport()` now returns `Result` instead of `Option`.
+
+[#2]: https://github.com/ilammy/rust-themis/issues/2
+[#4]: https://github.com/ilammy/rust-themis/issues/4
+[#5]: https://github.com/ilammy/rust-themis/pull/5
 
 Version 0.0.1 — 2018-10-04
 ==========================
