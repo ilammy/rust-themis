@@ -85,37 +85,6 @@ to point the build in the right direction:
 > Please note that static linkage to Themis is currently not supported.
 > This _includes_ the vendored build described below. 
 
-### Vendored build
-
-It is also possible to use a built-in version of Themis instead of the one installed in your system.
-This option can be enabled via Cargo's feature `vendored` in your Cargo.toml:
-
-```toml
-[dependencies]
-themis = { version = "0.0.1", features = ["vendored"] }
-```
-
-This will pull Themis source code, compile it, and link to it statically.
-Compiling built-in Themis requires the following dependencies to be present in the system:
-
-- C and C++ compilers (gcc 4.8+, clang 3.5+)
-- CMake 2.8.11+
-- GNU make
-- Go
-- Perl 5.6.1+
-
-These are build-time dependencies.
-They are not required at run-time,
-and `themis` crate will not have any 3rd-party dependencies.
-
-If you want to build vendored Themis from a local git tree
-(not from crates.io or from a distribution tarball)
-then please initialize git submodules first with the following command: 
-
-```console
-git submodule update --init --recursive
-```
-
 ## Licensing
 
 The code is distributed under [Apache 2.0 license](LICENSE).

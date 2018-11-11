@@ -127,15 +127,14 @@ fn data_corruption() {
     assert!(comparator2.get_result().unwrap());
 }
 
-// TODO: investigate crash in BoringSSL with vendored Themis build
+// TODO: investigate crash in BoringSSL
 //
-// This tests crashes with "--feature vendored". It suggests that one cannot reuse Secure
+// This tests crashes when Themis uses BoringSSL. It suggests that one cannot reuse Secure
 // Comparators at all because the crypto engine denies this (e.g., can't compute hash twice).
 // Investigate, probably file an issue in core Themis repo as this state should be tracked
 // by Themis library to avoid misuse. However, this may be a feature of Secure Comparator
 // so it may require a workaround.
 #[test]
-#[cfg_attr(feature = "vendored", ignore)]
 fn reusing_comparators() {
     // TODO: avoid reusing comparators via a better API
     let mut comparator1 = SecureComparator::new();

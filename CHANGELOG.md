@@ -19,8 +19,7 @@ The version currently under development.
   See [#4] for details. This is likely a **breaking change**.
 
 - `libthemis-sys` will now use Homebrew and pkg-config to locate native
-  Themis library. It is also possible to use `vendored` feature to build
-  a vendored copy of Themis. See [#2], [#5] for details.
+  Themis library. See [#2], [#5] for details.
 
 ## Breaking changes
 

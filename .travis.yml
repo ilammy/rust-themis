@@ -38,14 +38,3 @@ jobs:
     script:
     - cargo build
     - cargo test
-  - stage: Running tests
-    name: Vendored Themis
-    script:
-    - cargo build --features "vendored"
-    - cargo test --features "vendored"
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - stage: Running tests
-      name: Vendored Themis

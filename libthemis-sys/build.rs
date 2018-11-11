@@ -14,8 +14,6 @@
 
 extern crate bindgen;
 extern crate cc;
-#[cfg(feature = "vendored")]
-extern crate libthemis_src;
 extern crate pkg_config;
 
 use std::collections::HashSet;
@@ -67,8 +65,7 @@ fn env_var(name: &str) -> Option<OsString> {
 /// Embarks on an incredible adventure and returns with an include directory, library directory,
 /// and a list of Themis libraries.
 fn get_themis() -> (PathBuf, PathBuf, Vec<String>) {
-    None.or_else(|| probe_vendored())
-        .or_else(|| probe_environment())
+    None.or_else(|| probe_environment())
         .or_else(|| probe_homebrew())
         .or_else(|| probe_pkg_config())
         .or_else(|| probe_standard_locations())
@@ -96,24 +93,6 @@ THEMIS_INCLUDE_DIR, THEMIS_LIB_DIR and trying again.
 
 "
         ))
-}
-
-#[cfg(not(feature = "vendored"))]
-fn probe_vendored() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    None
-}
-
-/// Builds libthemis from source and returns those artifacts.
-#[cfg(feature = "vendored")]
-fn probe_vendored() -> Option<(PathBuf, PathBuf, Vec<String>)> {
-    let libthemis = libthemis_src::Build::new();
-
-    let artifacts = libthemis.build();
-    Some((
-        artifacts.include_dir().to_path_buf(),
-        artifacts.lib_dir().to_path_buf(),
-        artifacts.libs().to_vec(),
-    ))
 }
 
 /// Checks environment overrides for Themis locations.

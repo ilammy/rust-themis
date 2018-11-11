@@ -1,3 +1,0 @@
-[submodule "themis"]
-	path = libthemis-src/themis
-	url = https://github.com/cossacklabs/themis.git
