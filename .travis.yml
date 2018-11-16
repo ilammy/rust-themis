@@ -20,21 +20,18 @@ branches:
 env:
   global:
   - RUSTFLAGS="-D warnings"
+  - PKG_CONFIG_PATH=$TRAVIS_BUILD_DIR/pkgconfig/system
 
-jobs:
-  include:
-  - stage: Static checks
-    name: Formatting, code style, doc coverage
-    install:
-    - rustup component add clippy-preview
-    - rustup component add rustfmt-preview
-    - cargo deadlinks --version || cargo install cargo-deadlinks
-    script:
-    - cargo fmt -- --check
-    - cargo clippy --all-targets
-    - cargo clean --doc && cargo doc --no-deps && cargo deadlinks
-  - stage: Running tests
-    name: System Themis
-    script:
-    - cargo build
-    - cargo test
+install:
+- rustup component add clippy-preview
+- rustup component add rustfmt-preview
+- cargo deadlinks --version || cargo install cargo-deadlinks
+
+script:
+- cargo fmt -- --check
+- cargo clean --doc && cargo doc --no-deps && cargo deadlinks
+- cargo clippy --all-targets
+- cargo build
+- cargo test
+- LIBTHEMIS_STATIC=1 cargo build
+- LIBTHEMIS_STATIC=1 cargo test
