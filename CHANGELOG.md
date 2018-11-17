@@ -18,8 +18,8 @@ The version currently under development.
 - Themis now uses strong types for keys instead of `Vec<u8>` and `&[u8]`.
   See [#4] for details. This is likely a **breaking change**.
 
-- `libthemis-sys` will now use Homebrew and pkg-config to locate native
-  Themis library. See [#2], [#5] for details.
+- `libthemis-sys` will now use **pkg-config** to locate native Themis library.
+  See [#2], [#5], [#7] and README for details.
 
 ## Breaking changes
 
@@ -36,6 +36,7 @@ The version currently under development.
 [#2]: https://github.com/ilammy/rust-themis/issues/2
 [#4]: https://github.com/ilammy/rust-themis/issues/4
 [#5]: https://github.com/ilammy/rust-themis/pull/5
+[#7]: https://github.com/ilammy/rust-themis/pull/7
 
 Version 0.0.1 — 2018-10-04
 ==========================

@@ -40,11 +40,13 @@ If the compilation fails with a message like this:
 ```
    Compiling libthemis-sys v0.0.1
 error: failed to run custom build command for `libthemis-sys v0.0.1`
-process didn't exit successfully: `/your/app/target/debug/build/libthemis-sys-caf961089016a618/build-script-build` (exit code: 101)
+process didn't exit successfully: `target/debug/build/libthemis-sys-caf961089016a618/build-script-build` (exit code: 101)
 --- stdout
-cargo:rerun-if-env-changed=THEMIS_INCLUDE_DIR
-cargo:rerun-if-env-changed=THEMIS_LIB_DIR
-cargo:rerun-if-env-changed=THEMIS_DIR
+cargo:rerun-if-env-changed=LIBTHEMIS_NO_PKG_CONFIG
+
+[ some lines omitted ]
+
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
 
 --- stderr
 thread 'main' panicked at '
@@ -53,37 +55,75 @@ thread 'main' panicked at '
 
 [ some lines omitted ]
 
-', libcore/option.rs:1000:5
+', libthemis-sys/build.rs:60:13
 note: Run with `RUST_BACKTRACE=1` for a backtrace.
 ```
 
-then read the message carefully and help the build find your library.
+then please read the message carefully and help the build find your library.
 
+We use **pkg-config** to locate the native Themis library.
+Make sure you have this tool installed and correctly configured.
 If you use a non-standard installation path
 (e.g., `/opt/themis`)
-then you can use the following environment variables
-to point the build in the right direction:
+then you need to set `PKG_CONFIG_PATH` environment variable
+to the directory containing *.pc files
+(e.g., `/opt/themis/lib/pkgconfig`).
 
-- `THEMIS_DIR` —
-  the directory prefix where you `make install` to.
-  
-  Setting this should be enough in most cases.
-  If you do not use `make install`
-  and copy the headers and binaries manually
-  then set the following two variables instead.
- 
-- `THEMIS_INCLUDE_DIR` —
-  path to include directory root
-  (where `themis/themis.h` can be found).
+### Tweaking the build
 
-- `THEMIS_LIB_DIR` —
-  path to directory with library binaries
-  (`libthemis.a`, `*.so`, `*.dylib`, etc.)
+You can set other environment variables to control how pkg-config resolves native dependencies.
 
-> ⚠️ **Static libraries do not work**
->
-> Please note that static linkage to Themis is currently not supported.
-> This _includes_ the vendored build described below. 
+- `LIBTHEMIS_STATIC` — set to prefer static linking
+- `LIBTHEMIS_DYNAMIC` — set to prefer dynamic linking
+
+Refer to [the `pkg_config` documentation] for more information about available environment variables.
+
+[the `pkg_config` documentation]: https://docs.rs/pkg-config/latest/pkg_config/
+
+### 🍺 A note for Homebrew users 
+
+If you install Themis via `brew` on macOS then it will be using Homebrew's OpenSSL libraries.
+Homebrew does not install OpenSSL into default system location (it's _keg-only_).
+That's because your system is likely to contain its own OpenSSL installation in default path
+and Homebrew won't replace it to avoid accidental breakage. 
+
+You need to tell pkg-config to use Homebrew's OpenSSL
+by setting `PKG_CONFIG_PATH` to the keg location of OpenSSL used by Themis.
+You can usually find out where it is with a spell like this:
+
+```console
+$ find $(brew --prefix $(brew deps themis-openssl)) -follow -type d -name pkgconfig
+/usr/local/opt/openssl/lib/pkgconfig
+```
+
+### ⛑ Bundled *.pc files
+
+Unfortunately, Themis packages currently do not include *.pc files for pkg-config.
+You can use the ones bundled with this repository as a temporary measure.
+Take a look into [`pkgconfig`](pkgconfig) directory:
+
+- `pkgconfig/system/*.pc` —
+  if you install Themis into `/usr/lib`
+  (usually the case on Linux with package managers)
+- `pkgconfig/local/*.pc` —
+  if you install Themis into `/usr/local/lib`
+  (usually the case on macOS or with `make install`)
+
+Copy these files somewhere in your home directory, for example,
+and tell pkg-config to use them:
+
+```console
+$ mkdir ~/pkgconfig
+$ cp pkgconfig/usr/local/lib/pkgconfig/*.pc ~/pkgconfig/
+$ export PKG_CONFIG_PATH=$HOME/pkgconfig
+```
+
+Multiple paths in `PKG_CONFIG_PATH` are separated with colons,
+like this:
+
+```console
+$ export PKG_CONFIG_PATH=$HOME/pkgconfig:/usr/local/opt/openssl/lib/pkgconfig
+```
 
 ## Licensing
 
