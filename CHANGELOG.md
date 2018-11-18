@@ -3,6 +3,11 @@
 
 The version currently under development.
 
+Version 0.0.2 — 2018-11-18
+==========================
+
+Improving type safety and dependency management.
+
 ## New features
 
 - `SecureComparator` now implements `Default`.

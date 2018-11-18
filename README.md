@@ -15,7 +15,7 @@ Then you simply add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-themis = "0.0.1"
+themis = "0.0.2"
 ```
 
 And you're ready to go.
@@ -38,8 +38,8 @@ Once that's done the build should complete successfully.
 If the compilation fails with a message like this:
 
 ```
-   Compiling libthemis-sys v0.0.1
-error: failed to run custom build command for `libthemis-sys v0.0.1`
+   Compiling libthemis-sys v0.0.2
+error: failed to run custom build command for `libthemis-sys v0.0.2`
 process didn't exit successfully: `target/debug/build/libthemis-sys-caf961089016a618/build-script-build` (exit code: 101)
 --- stdout
 cargo:rerun-if-env-changed=LIBTHEMIS_NO_PKG_CONFIG
