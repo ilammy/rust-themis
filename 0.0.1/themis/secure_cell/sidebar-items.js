@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SecureCell","Basic Secure Cell."],["SecureCellContextImprint","Secure Cell in a context imprint operation mode."],["SecureCellSeal","Secure Cell in a sealing operation mode."],["SecureCellTokenProtect","Secure Cell in a token protect operation mode."]]});
