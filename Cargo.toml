@@ -5,6 +5,7 @@ authors = ["rust-themis developers"]
 description = "High-level cryptographic services for storage and messaging"
 homepage = "https://www.cossacklabs.com/themis/"
 repository = "https://github.com/ilammy/rust-themis"
+documentation = "https://rust-themis.ilammy.net/0.0.2/themis/index.html"
 readme = "README.md"
 keywords = ["crypto", "Themis"]
 categories = ["cryptography", "api-bindings"]
