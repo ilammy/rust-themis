@@ -12,10 +12,126 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Secure Comparator service.
+//! Secure Comparator protocol.
 //!
-//! **Secure Comparator** is an implementation of _Zero-Knowledge Proof_-based protocol,
-//! built around OTR SMP implementation.
+//! **Secure Comparator** is an interactive protocol for two parties that compares whether they
+//! share the same secret or not. It is built around a [Zero Knowledge Proof][ZKP]-based protocol
+//! ([Socialist Millionaire's Protocol][SMP]), with a number of [security enhancements][paper].
+//!
+//! Secure Comparator is transport-agnostic and only requires the user(s) to pass messages
+//! in a certain sequence. The protocol itself is ingrained into the functions and requires
+//! minimal integration efforts from the developer.
+//!
+//! [ZKP]: https://www.cossacklabs.com/zero-knowledge-protocols-without-magic.html
+//! [SMP]: https://en.wikipedia.org/wiki/Socialist_millionaires
+//! [paper]: https://www.cossacklabs.com/files/secure-comparator-paper-rev12.pdf
+//!
+//! # Examples
+//!
+//! Secure Comparator has two parties — called client and server — the only difference between
+//! them is that the client is one who initiates the comparison.
+//!
+//! Before initiating the protocol both parties should [append their secrets] to be compared.
+//! This can be done incrementally so even multi-gigabyte data sets can be compared with ease.
+//!
+//! [append their secrets]: struct.SecureComparator.html#method.append_secret
+//!
+//! ```
+//! # fn main() -> Result<(), themis::Error> {
+//! use themis::secure_comparator::SecureComparator;
+//!
+//! let mut comparison = SecureComparator::new();
+//!
+//! comparison.append_secret(b"999-04-1234")?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! After that the client [initiates the comparison] and runs the following loop:
+//!
+//! [initiates the comparison]: struct.SecureComparator.html#method.begin_compare
+//!
+//! ```
+//! # fn main() -> Result<(), themis::Error> {
+//! # use std::cell::RefCell;
+//! #
+//! # use themis::secure_comparator::SecureComparator;
+//! #
+//! # let mut comparison = SecureComparator::new();
+//! # let mut other_peer = SecureComparator::new();
+//! #
+//! # comparison.append_secret(b"999-04-1234").expect("append client");
+//! # other_peer.append_secret(b"999-04-1234").expect("append server");
+//! #
+//! # let peer_data = RefCell::new(None);
+//! # let mut send = |data: &[u8]| {
+//! #     let reply = other_peer.proceed_compare(data).expect("server comparison");
+//! #     peer_data.replace(Some(reply));
+//! # };
+//! # let mut receive = || {
+//! #     peer_data.borrow_mut().take().expect("reply data")
+//! # };
+//! #
+//! let mut request = comparison.begin_compare()?;
+//!
+//! while !comparison.is_complete() {
+//!     send(&request);         // This function should send the `request` to the server.
+//!     let reply = receive();  // This function should receive a `reply` from the server.
+//!
+//!     request = comparison.proceed_compare(&reply)?;
+//! }
+//!
+//! if !comparison.get_result()? {
+//!     panic!("handle failed comparison here");
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! While the server does almost the same:
+//!
+//! ```
+//! # fn main() -> Result<(), themis::Error> {
+//! # use std::cell::RefCell;
+//! #
+//! # use themis::secure_comparator::SecureComparator;
+//! #
+//! # let mut comparison = SecureComparator::new();
+//! # let mut other_peer = SecureComparator::new();
+//! #
+//! # comparison.append_secret(b"999-04-1234").expect("append server");
+//! # other_peer.append_secret(b"999-04-1234").expect("append client");
+//! # let request = other_peer.begin_compare().expect("begin client");
+//! #
+//! # let peer_data = RefCell::new(Some(request));
+//! # let mut send = |data: &[u8]| {
+//! #     let reply = other_peer.proceed_compare(data).expect("server comparison");
+//! #     peer_data.replace(Some(reply));
+//! # };
+//! # let mut receive = || {
+//! #     peer_data.borrow_mut().take().expect("reply data")
+//! # };
+//! #
+//! while !comparison.is_complete() {
+//!     // This function should receive a `request` from the client.
+//!     let request = receive();
+//!
+//!     let reply = comparison.proceed_compare(&request)?;
+//!
+//!     send(&reply);   // This function should send the `reply` to the client.
+//! }
+//!
+//! if !comparison.get_result()? {
+//!     panic!("handle failed comparison here");
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! Both use [`get_result`] to get the comparison result after it [`is_complete`]:
+//!
+//! [`get_result`]: struct.SecureComparator.html#method.get_result
+//! [`is_complete`]: struct.SecureComparator.html#method.is_complete
 
 use std::os::raw::c_void;
 use std::ptr;
@@ -29,6 +145,10 @@ use error::{Error, ErrorKind, Result};
 use utils::into_raw_parts;
 
 /// Secure Comparison context.
+///
+/// Please see [module-level documentation][secure_comparator] for examples.
+///
+/// [secure_comparator]: index.html
 pub struct SecureComparator {
     comp_ctx: *mut secure_comparator_t,
 }
@@ -72,6 +192,25 @@ impl SecureComparator {
     /// [`append_secret`]: struct.SecureComparator.html#method.append_secret
     /// [`begin_compare`]: struct.SecureComparator.html#method.begin_compare
     /// [`get_result`]: struct.SecureComparator.html#method.get_result
+    ///
+    /// # Examples
+    ///
+    /// You can pass in anything convertible into a byte slice: a byte slice or an array,
+    /// a `Vec<u8>`, or a `String`.
+    ///
+    /// ```
+    /// # fn main() -> Result<(), themis::Error> {
+    /// use themis::secure_comparator::SecureComparator;
+    ///
+    /// let mut comparison = SecureComparator::new();
+    ///
+    /// comparison.append_secret(b"byte string")?;
+    /// comparison.append_secret(&[1, 2, 3, 4, 5])?;
+    /// comparison.append_secret(vec![6, 7, 8, 9])?;
+    /// comparison.append_secret(format!("owned string"))?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn append_secret<S: AsRef<[u8]>>(&mut self, secret: S) -> Result<()> {
         let (secret_ptr, secret_len) = into_raw_parts(secret.as_ref());
 
@@ -100,6 +239,12 @@ impl SecureComparator {
     /// all the data by this point.
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
+    ///
+    /// # Examples
+    ///
+    /// Please see [module-level documentation][secure_comparator] for examples.
+    ///
+    /// [secure_comparator]: index.html
     pub fn begin_compare(&mut self) -> Result<Vec<u8>> {
         let mut compare_data = Vec::new();
         let mut compare_data_len = 0;
@@ -148,6 +293,12 @@ impl SecureComparator {
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
     /// [`is_complete`]: struct.SecureComparator.html#method.is_complete
+    ///
+    /// # Examples
+    ///
+    /// Please see [module-level documentation][secure_comparator] for examples.
+    ///
+    /// [secure_comparator]: index.html
     pub fn proceed_compare<D: AsRef<[u8]>>(&mut self, peer_data: D) -> Result<Vec<u8>> {
         let (peer_compare_data_ptr, peer_compare_data_len) = into_raw_parts(peer_data.as_ref());
 
@@ -197,7 +348,41 @@ impl SecureComparator {
     /// Returns the result of comparison.
     ///
     /// Let it be a surprise: `true` if data has been found equal on both peers, `false` otherwise.
-    /// Or an error if you call this method too early.
+    /// Or an error if you call this method too early, or a real error has happened during the
+    /// comparison.
+    ///
+    /// # Examples
+    ///
+    /// You should call this method only after the comparison is complete.
+    ///
+    /// ```
+    /// # fn main() -> Result<(), themis::Error> {
+    /// use themis::secure_comparator::SecureComparator;
+    /// #
+    /// # use std::cell::RefCell;
+    ///
+    /// let mut comparison = SecureComparator::new();
+    /// # let mut other_peer = SecureComparator::new();
+    ///
+    /// comparison.append_secret(b"999-04-1234")?;
+    /// # other_peer.append_secret(b"999-04-1234")?;
+    ///
+    /// assert!(comparison.get_result().is_err());
+    ///
+    /// // Perform comparison
+    /// #
+    /// # let mut request = comparison.begin_compare()?;
+    /// #
+    /// while !comparison.is_complete() {
+    ///     // ...
+    /// #   let reply = other_peer.proceed_compare(&request)?;
+    /// #   request = comparison.proceed_compare(&reply)?;
+    /// }
+    ///
+    /// assert!(comparison.get_result().is_ok());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn get_result(&self) -> Result<bool> {
         let status = unsafe { secure_comparator_get_result(self.comp_ctx) };
         let error = Error::from_match_status(status);
@@ -211,6 +396,24 @@ impl SecureComparator {
     /// Checks if this comparison is complete.
     ///
     /// Comparison that failed irrecoverably due to an error is also considered complete.
+    ///
+    /// # Examples
+    ///
+    /// Typically you would use this method to terminate the comparison loop. Please see
+    /// [module-level documentation][secure_comparator] for examples.
+    ///
+    /// [secure_comparator]: index.html
+    ///
+    /// It is safe to call this method at any point, even if the comparison has not been initiated
+    /// yet (in which case it is obviously not complete):
+    ///
+    /// ```
+    /// use themis::secure_comparator::SecureComparator;
+    ///
+    /// let mut comparison = SecureComparator::new();
+    ///
+    /// assert!(!comparison.is_complete());
+    /// ```
     pub fn is_complete(&self) -> bool {
         match self.get_result() {
             Err(ref e) if e.kind() == ErrorKind::CompareNotReady => false,
