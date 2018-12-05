@@ -3,6 +3,13 @@
 
 The version currently under development.
 
+## New features
+
+- Crate feature `vendored` allows to build and use a vendored copy of the core
+  Themis library in case it is not installed in the system. ([#9])
+  
+[#9]: https://github.com/ilammy/rust-themis/pull/9
+
 Version 0.0.2 — 2018-11-18
 ==========================
 

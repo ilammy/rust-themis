@@ -12,10 +12,13 @@ categories = ["cryptography", "api-bindings"]
 license = "Apache-2.0"
 
 [workspace]
-members = ["libthemis-sys"]
+members = ["libthemis-src", "libthemis-sys"]
 
 [badges]
 travis-ci = { repository = "ilammy/rust-themis" }
+
+[features]
+vendored = ["libthemis-sys/vendored"]
 
 [dependencies]
 libthemis-sys = { path = "libthemis-sys", version = "=0.0.2" }

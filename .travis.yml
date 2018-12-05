@@ -5,14 +5,6 @@ dist: trusty
 rust: stable
 cache: cargo
 
-addons:
-  apt:
-    sources:
-    - sourceline: "deb https://pkgs.cossacklabs.com/stable/ubuntu trusty main"
-      key_url: "https://pkgs.cossacklabs.com/gpg"
-    packages:
-    - libthemis-dev
-
 branches:
   except:
   - /^wip\/.*$/
@@ -20,18 +12,35 @@ branches:
 env:
   global:
   - RUSTFLAGS="-D warnings"
-  - PKG_CONFIG_PATH=$TRAVIS_BUILD_DIR/pkgconfig/system
 
 install:
 - rustup component add clippy-preview
 - rustup component add rustfmt-preview
 - cargo deadlinks --version || cargo install cargo-deadlinks
 
-script:
-- cargo fmt -- --check
-- cargo clean --doc && cargo doc --no-deps && cargo deadlinks
-- cargo clippy --all-targets
-- cargo build
-- cargo test
-- LIBTHEMIS_STATIC=1 cargo build
-- LIBTHEMIS_STATIC=1 cargo test
+jobs:
+  include:
+  - name: System Themis
+    addons:
+      apt:
+        sources:
+          - sourceline: "deb https://pkgs.cossacklabs.com/stable/ubuntu trusty main"
+            key_url: "https://pkgs.cossacklabs.com/gpg"
+        packages:
+          - libthemis-dev
+    env:
+    - PKG_CONFIG_PATH=$TRAVIS_BUILD_DIR/pkgconfig/system
+    script:
+    - cargo fmt -- --check
+    - cargo clean --doc && cargo doc --no-deps && cargo deadlinks
+    - cargo clippy --all-targets
+    - cargo build
+    - cargo test
+    - LIBTHEMIS_STATIC=1 cargo build
+    - LIBTHEMIS_STATIC=1 cargo test
+  - name: Vendored Themis
+    script:
+    - cargo clean --doc && cargo doc --features "vendored" && cargo deadlinks
+    - cargo clippy --all-targets --features "vendored"
+    - cargo build --features "vendored"
+    - cargo test --features "vendored"

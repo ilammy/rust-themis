@@ -14,6 +14,8 @@
 
 extern crate bindgen;
 extern crate cc;
+#[cfg(feature = "vendored")]
+extern crate libthemis_src;
 extern crate pkg_config;
 
 use std::env;
@@ -50,11 +52,17 @@ fn main() {
 
 /// Embarks on an incredible adventure and returns with a suitable Themis (or dies trying).
 fn get_themis() -> Library {
-    let result = pkg_config::Config::new()
-        .env_metadata(true)
-        .arg("libsoter") // TODO: remove this together with themis_shims
-        .probe("libthemis");
-    match result {
+    #[cfg(feature = "vendored")]
+    libthemis_src::make();
+
+    let mut pkg_config = pkg_config::Config::new();
+    pkg_config.env_metadata(true);
+    pkg_config.arg("libsoter"); // TODO: remove this together with themis_shims
+
+    #[cfg(feature = "vendored")]
+    pkg_config.statik(true);
+
+    match pkg_config.probe("libthemis") {
         Ok(library) => return library,
         Err(error) => panic!(format!(
             "
