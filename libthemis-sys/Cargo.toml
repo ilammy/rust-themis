@@ -22,3 +22,7 @@ bindgen = "0.42.0"
 cc = "1.0"
 libthemis-src = { path = "../libthemis-src", version = "=0.0.2", optional = true }
 pkg-config = "0.3.14"
+
+[package.metadata.docs.rs]
+features = "vendored"
+dependencies = ["libssl-dev"]
