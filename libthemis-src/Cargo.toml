@@ -1,6 +1,6 @@
 [package]
 name = "libthemis-src"
-version = "0.0.2"
+version = "0.0.2-1"
 edition = "2018"
 authors = ["rust-themis developers"]
 description = "Building native Themis library"
