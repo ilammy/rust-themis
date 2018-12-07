@@ -20,10 +20,8 @@ use std::ffi::CStr;
 fn check_version() {
     let version = unsafe { CStr::from_ptr(libthemis_sys::themis_version()) };
     // Themis 0.10.0 is slightly buggy and identifies itself as 0.9.
-    assert!(
-        version
-            .to_str()
-            .expect("valid UTF-8")
-            .contains("themis 0.9")
-    );
+    assert!(version
+        .to_str()
+        .expect("valid UTF-8")
+        .contains("themis 0.9"));
 }

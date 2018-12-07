@@ -20,16 +20,18 @@
 use std::os::raw::{c_int, c_void};
 use std::{ptr, result, slice};
 
-use bindings::{
-    secure_session_connect, secure_session_create, secure_session_destroy,
-    secure_session_generate_connect_request, secure_session_get_remote_id,
-    secure_session_is_established, secure_session_receive, secure_session_send, secure_session_t,
-    secure_session_unwrap, secure_session_user_callbacks_t, secure_session_wrap, STATE_ESTABLISHED,
-    STATE_IDLE, STATE_NEGOTIATING,
+use crate::{
+    bindings::{
+        secure_session_connect, secure_session_create, secure_session_destroy,
+        secure_session_generate_connect_request, secure_session_get_remote_id,
+        secure_session_is_established, secure_session_receive, secure_session_send,
+        secure_session_t, secure_session_unwrap, secure_session_user_callbacks_t,
+        secure_session_wrap, STATE_ESTABLISHED, STATE_IDLE, STATE_NEGOTIATING,
+    },
+    error::{themis_status_t, Error, ErrorKind, Result},
+    keys::{EcdsaPublicKey, EcdsaSecretKey},
+    utils::into_raw_parts,
 };
-use error::{themis_status_t, Error, ErrorKind, Result};
-use keys::{EcdsaPublicKey, EcdsaSecretKey};
-use utils::into_raw_parts;
 
 /// Secure Session context.
 pub struct SecureSession<T> {
@@ -530,6 +532,7 @@ impl<T> SecureSessionDelegate<T>
 where
     T: SecureSessionTransport,
 {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(transport: T) -> Box<Self> {
         let mut delegate = Box::new(Self {
             callbacks: secure_session_user_callbacks_t {

@@ -86,14 +86,16 @@
 
 use std::ptr;
 
-use bindings::{
-    themis_secure_cell_decrypt_context_imprint, themis_secure_cell_decrypt_seal,
-    themis_secure_cell_decrypt_token_protect, themis_secure_cell_encrypt_context_imprint,
-    themis_secure_cell_encrypt_seal, themis_secure_cell_encrypt_token_protect,
+use crate::{
+    bindings::{
+        themis_secure_cell_decrypt_context_imprint, themis_secure_cell_decrypt_seal,
+        themis_secure_cell_decrypt_token_protect, themis_secure_cell_encrypt_context_imprint,
+        themis_secure_cell_encrypt_seal, themis_secure_cell_encrypt_token_protect,
+    },
+    error::{Error, ErrorKind, Result},
+    keys::KeyBytes,
+    utils::into_raw_parts,
 };
-use error::{Error, ErrorKind, Result};
-use keys::KeyBytes;
-use utils::into_raw_parts;
 
 /// Basic Secure Cell.
 ///

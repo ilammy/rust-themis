@@ -58,4 +58,4 @@ pub mod secure_session;
 mod error;
 mod utils;
 
-pub use error::{Error, ErrorKind, Result};
+pub use crate::error::{Error, ErrorKind, Result};

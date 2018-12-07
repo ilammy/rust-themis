@@ -129,9 +129,11 @@
 
 use std::fmt;
 
-use bindings::{themis_get_key_kind, themis_is_valid_key};
-use error::{Error, ErrorKind, Result};
-use utils::into_raw_parts;
+use crate::{
+    bindings::{themis_get_key_kind, themis_is_valid_key},
+    error::{Error, ErrorKind, Result},
+    utils::into_raw_parts,
+};
 
 /// Key material.
 #[derive(Clone, Eq, PartialEq, Hash)]

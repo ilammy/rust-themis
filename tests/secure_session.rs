@@ -51,6 +51,7 @@ struct ChannelTransport {
 }
 
 impl ChannelTransport {
+    #[allow(clippy::new_ret_no_self)]
     fn new(key_map: &Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>) -> (Self, Self) {
         let (tx12, rx21) = channel();
         let (tx21, rx12) = channel();

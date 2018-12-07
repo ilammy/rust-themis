@@ -40,7 +40,8 @@ fn main() {
             (about: "Connect to server for comparison")
             (@arg address: -c --connect [address] "Server address (default: [::1]:7575)")
         )
-    ).get_matches();
+    )
+    .get_matches();
 
     let mut comparison = SecureComparator::new();
 

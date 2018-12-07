@@ -27,7 +27,8 @@ fn main() {
         (about: "Generating ECDSA key pairs.")
         (@arg secret: --secret [path] "Secret key file (default: secret.key)")
         (@arg public: --public [path] "Public key file (default: public.key)")
-    ).get_matches();
+    )
+    .get_matches();
     let secret_path = matches.value_of("secret").unwrap_or("secret.key");
     let public_path = matches.value_of("public").unwrap_or("public.key");
 

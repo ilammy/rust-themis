@@ -136,13 +136,15 @@
 use std::os::raw::c_void;
 use std::ptr;
 
-use bindings::{
-    secure_comparator_append_secret, secure_comparator_begin_compare, secure_comparator_create,
-    secure_comparator_destroy, secure_comparator_get_result, secure_comparator_proceed_compare,
-    secure_comparator_t,
+use crate::{
+    bindings::{
+        secure_comparator_append_secret, secure_comparator_begin_compare, secure_comparator_create,
+        secure_comparator_destroy, secure_comparator_get_result, secure_comparator_proceed_compare,
+        secure_comparator_t,
+    },
+    error::{Error, ErrorKind, Result},
+    utils::into_raw_parts,
 };
-use error::{Error, ErrorKind, Result};
-use utils::into_raw_parts;
 
 /// Secure Comparison context.
 ///

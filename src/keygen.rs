@@ -47,9 +47,11 @@
 
 use std::ptr;
 
-use bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair};
-use error::{Error, ErrorKind, Result};
-use keys::{EcdsaKeyPair, EcdsaPublicKey, EcdsaSecretKey, RsaKeyPair, RsaPublicKey, RsaSecretKey};
+use crate::{
+    bindings::{themis_gen_ec_key_pair, themis_gen_rsa_key_pair},
+    error::{Error, ErrorKind, Result},
+    keys::{EcdsaKeyPair, EcdsaPublicKey, EcdsaSecretKey, RsaKeyPair, RsaPublicKey, RsaSecretKey},
+};
 
 /// Generates a pair of RSA keys.
 ///

@@ -3,6 +3,8 @@
 
 The version currently under development.
 
+Themis now requires Rust 2018 (rustc 1.31+) to compile.
+
 ## New features
 
 - Crate feature `vendored` allows to build and use a vendored copy of the core

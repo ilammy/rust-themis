@@ -32,7 +32,8 @@ fn main() {
         (@arg password: -p --password <string> "Password to use")
         (@arg input:  +required "Input file")
         (@arg output: +required "Output file")
-    ).get_matches();
+    )
+    .get_matches();
 
     let encrypt = !matches.is_present("decrypt");
     let password = matches.value_of("password").unwrap();
