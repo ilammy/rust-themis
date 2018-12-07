@@ -1,6 +1,6 @@
 [package]
 name = "libthemis-sys"
-version = "0.0.2-1"
+version = "0.0.2-2"
 edition = "2018"
 authors = ["rust-themis developers"]
 description = "FFI binding to libthemis"
@@ -25,5 +25,5 @@ libthemis-src = { path = "../libthemis-src", version = "=0.0.2-1", optional = tr
 pkg-config = "0.3.14"
 
 [package.metadata.docs.rs]
-features = "vendored"
+features = ["vendored"]
 dependencies = ["libssl-dev"]

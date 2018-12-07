@@ -1,6 +1,6 @@
 [package]
 name = "themis"
-version = "0.0.2-1"
+version = "0.0.2-2"
 edition = "2018"
 authors = ["rust-themis developers"]
 description = "High-level cryptographic services for storage and messaging"
@@ -21,7 +21,7 @@ travis-ci = { repository = "ilammy/rust-themis" }
 vendored = ["libthemis-sys/vendored"]
 
 [dependencies]
-libthemis-sys = { path = "libthemis-sys", version = "=0.0.2-1" }
+libthemis-sys = { path = "libthemis-sys", version = "=0.0.2-2" }
 
 [dev-dependencies]
 byteorder = "1.2.7"
@@ -30,5 +30,5 @@ log = "0.4.5"
 env_logger = "0.5.13"
 
 [package.metadata.docs.rs]
-features = "vendored"
+features = ["vendored"]
 dependencies = ["libssl-dev"]
