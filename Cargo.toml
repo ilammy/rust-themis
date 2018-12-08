@@ -24,6 +24,7 @@ vendored = ["libthemis-sys/vendored"]
 libthemis-sys = { path = "libthemis-sys", version = "=0.0.2-2" }
 
 [dev-dependencies]
+base64 = "0.10.0"
 byteorder = "1.2.7"
 clap = "2.32"
 log = "0.4.5"
@@ -32,3 +33,7 @@ env_logger = "0.5.13"
 [package.metadata.docs.rs]
 features = ["vendored"]
 dependencies = ["libssl-dev"]
+
+[[example]]
+name = "scell_context_string_echo"
+path = "tools/scell_context_string_echo.rs"
