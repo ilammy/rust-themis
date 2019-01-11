@@ -49,3 +49,7 @@ path = "tools/scell_seal_string_echo.rs"
 [[example]]
 name = "scell_token_string_echo"
 path = "tools/scell_token_string_echo.rs"
+
+[[example]]
+name = "smessage_encryption"
+path = "tools/smessage_encryption.rs"
