@@ -22,6 +22,7 @@ vendored = ["libthemis-sys/vendored"]
 
 [dependencies]
 libthemis-sys = { path = "libthemis-sys", version = "=0.0.2-2" }
+zeroize = "0.5.2"
 
 [dev-dependencies]
 byteorder = "1.2.7"

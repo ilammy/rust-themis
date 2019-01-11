@@ -129,6 +129,8 @@
 
 use std::fmt;
 
+use zeroize::Zeroize;
+
 use crate::{
     bindings::{themis_get_key_kind, themis_is_valid_key},
     error::{Error, ErrorKind, Result},
@@ -138,8 +140,6 @@ use crate::{
 /// Key material.
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub(crate) struct KeyBytes(Vec<u8>);
-
-// TODO: securely zero memory when dropping KeyBytes (?)
 
 impl KeyBytes {
     /// Makes a key from an owned byte vector.
@@ -166,6 +166,13 @@ impl KeyBytes {
 impl fmt::Debug for KeyBytes {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "KeyBytes({} bytes)", self.0.len())
+    }
+}
+
+// Make sure that sensitive key material is removed from memory as soon as it is no longer needed.
+impl Drop for KeyBytes {
+    fn drop(&mut self) {
+        self.0.zeroize();
     }
 }
 
