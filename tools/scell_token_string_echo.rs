@@ -62,10 +62,12 @@ fn main() {
                 eprintln!("failed to decode token: {}", error);
                 exit(1);
             });
-            let decrypted = cell.decrypt(&decoded_message, &decoded_token).unwrap_or_else(|error| {
-                eprintln!("failed to decrypt message: {}", error);
-                exit(1);
-            });
+            let decrypted = cell
+                .decrypt(&decoded_message, &decoded_token)
+                .unwrap_or_else(|error| {
+                    eprintln!("failed to decrypt message: {}", error);
+                    exit(1);
+                });
             println!("{}", std::str::from_utf8(&decrypted).expect("UTF-8 string"));
         }
         other => {

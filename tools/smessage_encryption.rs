@@ -99,7 +99,10 @@ fn main() {
             println!("{}", std::str::from_utf8(&verified).expect("UTF-8 string"));
         }
         other => {
-            eprintln!("invalid command {}, use \"enc\", \"dec\", \"sign\", \"verify\"", other);
+            eprintln!(
+                "invalid command {}, use \"enc\", \"dec\", \"sign\", \"verify\"",
+                other
+            );
             exit(1);
         }
     }

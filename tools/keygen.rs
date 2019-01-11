@@ -32,7 +32,9 @@ fn main() {
     )
     .get_matches();
     let secret_path = matches.value_of("secret").unwrap_or("key").to_owned();
-    let public_path = matches.value_of("public").map_or_else(|| secret_path.clone() + ".pub", |s| s.to_owned());
+    let public_path = matches
+        .value_of("public")
+        .map_or_else(|| secret_path.clone() + ".pub", |s| s.to_owned());
 
     let (secret_key, public_key) = gen_ec_key_pair().split();
 
