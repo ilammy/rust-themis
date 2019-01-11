@@ -37,3 +37,11 @@ dependencies = ["libssl-dev"]
 [[example]]
 name = "scell_context_string_echo"
 path = "tools/scell_context_string_echo.rs"
+
+[[example]]
+name = "scell_seal_string_echo"
+path = "tools/scell_seal_string_echo.rs"
+
+[[example]]
+name = "scell_token_string_echo"
+path = "tools/scell_token_string_echo.rs"
