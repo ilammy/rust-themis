@@ -59,7 +59,7 @@ fn main() {
             println!("{}", std::str::from_utf8(&decrypted).expect("UTF-8 string"));
         }
         other => {
-            eprintln!("wrong mode {}, use \"enc\" or \"dec\"", other);
+            eprintln!("invalid mode {}, use \"enc\" or \"dec\"", other);
             exit(1);
         }
     }
