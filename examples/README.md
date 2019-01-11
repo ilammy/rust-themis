@@ -1,7 +1,5 @@
 Here we have some examples of Themis usage.
 
-* [**keygen**](keygen.rs) —
-  a tool for generating ECDSA keys (usable by other examples) 
 * [**secure_cell**](secure_cell.rs) —
   simple file encryption/decryption based on Secure Cell
 * [**secure_compare**](secure_compare.rs) —
@@ -18,31 +16,28 @@ Here we have some examples of Themis usage.
 You can run the examples with Cargo like this:
 
 ```
-$ cargo run --example keygen -- --help
-keygen 0.0.1
-Generating private-public ECDSA key pairs.
+$ cargo run --example secure_cell -- --help
+secure_cell 0.0.2
+Simple encryption with Secure Cell.
 
 USAGE:
-    keygen [OPTIONS]
+    secure_cell [FLAGS] <input> <output> --password <string>
 
 FLAGS:
+    -d, --decrypt    Decrypt the input
+    -e, --encrypt    Encrypt the input [default]
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 OPTIONS:
-        --private <path>    Private key file (default: private.key)
-        --public <path>     Public key file (default: public.key)
+    -p, --password <string>    Password to use
+
+ARGS:
+    <input>     Input file
+    <output>    Output file
 ```
 
 Note that the arguments are passed after `--`.
-
-
-## keygen
-
-This tool can be used to generate key files usable by other examples.
-
-Themis supports RSA keys for some use-cases,
-but most of the features expect ECDSA keys.
 
 
 ## secure_cell
