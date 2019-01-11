@@ -16,8 +16,10 @@
 extern crate clap;
 extern crate themis;
 
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{self, Write};
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 
 use themis::keygen::gen_ec_key_pair;
 
@@ -25,27 +27,34 @@ fn main() {
     let matches = clap_app!(keygen =>
         (version: env!("CARGO_PKG_VERSION"))
         (about: "Generating ECDSA key pairs.")
-        (@arg secret: --secret [path] "Secret key file (default: secret.key)")
-        (@arg public: --public [path] "Public key file (default: public.key)")
+        (@arg secret: "Secret key file (default: key)")
+        (@arg public: "Public key file (default: key.pub)")
     )
     .get_matches();
-    let secret_path = matches.value_of("secret").unwrap_or("secret.key");
-    let public_path = matches.value_of("public").unwrap_or("public.key");
+    let secret_path = matches.value_of("secret").unwrap_or("key");
+    let public_path = matches.value_of("public").unwrap_or("key.pub");
 
     let (secret_key, public_key) = gen_ec_key_pair().split();
 
-    match write_file(&secret_key, &secret_path) {
+    match write_file(&secret_key, &secret_path, 0o400) {
         Ok(_) => eprintln!("wrote secret key to {}", secret_path),
         Err(e) => eprintln!("failed to write secret key to {}: {}", secret_path, e),
     }
-    match write_file(&public_key, &public_path) {
+    match write_file(&public_key, &public_path, 0o666) {
         Ok(_) => eprintln!("wrote public key to {}", public_path),
         Err(e) => eprintln!("failed to write public key to {}: {}", public_path, e),
     }
 }
 
-fn write_file<K: AsRef<[u8]>>(key: K, path: &str) -> io::Result<()> {
-    let mut file = File::create(path)?;
+fn write_file<K: AsRef<[u8]>>(key: K, path: &str, mode: u32) -> io::Result<()> {
+    let mut options = OpenOptions::new();
+    options.create(true);
+    options.truncate(true);
+    options.write(true);
+    #[cfg(unix)]
+    options.mode(mode);
+
+    let mut file = options.open(path)?;
     file.write_all(key.as_ref())?;
     Ok(())
 }
