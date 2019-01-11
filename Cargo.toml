@@ -35,6 +35,10 @@ features = ["vendored"]
 dependencies = ["libssl-dev"]
 
 [[example]]
+name = "keygen"
+path = "tools/keygen.rs"
+
+[[example]]
 name = "scell_context_string_echo"
 path = "tools/scell_context_string_echo.rs"
 
