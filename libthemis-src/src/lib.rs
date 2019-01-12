@@ -44,11 +44,6 @@
 //! }
 //! ```
 
-extern crate copy_dir;
-extern crate make_cmd;
-#[cfg(test)]
-extern crate tempfile;
-
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};

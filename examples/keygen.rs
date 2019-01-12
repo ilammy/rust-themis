@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[macro_use]
-extern crate clap;
-extern crate themis;
-
 use std::fs::File;
 use std::io::{self, Write};
 
+use clap::clap_app;
 use themis::keygen::gen_ec_key_pair;
 
 fn main() {

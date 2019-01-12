@@ -64,12 +64,11 @@
 
 use std::ptr;
 
-use crate::{
-    bindings::{themis_secure_message_unwrap, themis_secure_message_wrap},
-    error::{Error, ErrorKind, Result},
-    keys::{KeyPair, PublicKey, SecretKey},
-    utils::into_raw_parts,
-};
+use bindings::{themis_secure_message_unwrap, themis_secure_message_wrap};
+
+use crate::error::{Error, ErrorKind, Result};
+use crate::keys::{KeyPair, PublicKey, SecretKey};
+use crate::utils::into_raw_parts;
 
 /// Secure Message encryption and decryption.
 ///

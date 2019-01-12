@@ -46,8 +46,6 @@
 #![doc(html_logo_url = "https://rust-themis.ilammy.net/images/logo.png")]
 #![doc(html_favicon_url = "https://rust-themis.ilammy.net/images/favicon.png")]
 
-extern crate libthemis_sys as bindings;
-
 pub mod keygen;
 pub mod keys;
 pub mod secure_cell;

@@ -13,10 +13,6 @@
 // limitations under the License.
 
 #[macro_use]
-extern crate clap;
-extern crate env_logger;
-extern crate themis;
-#[macro_use]
 extern crate log;
 
 use std::fs::File;
@@ -24,6 +20,7 @@ use std::io::{self, Read, Write};
 use std::net::UdpSocket;
 use std::thread;
 
+use clap::clap_app;
 use themis::keys::{PublicKey, SecretKey};
 use themis::secure_message::{SecureSign, SecureVerify};
 

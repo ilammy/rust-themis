@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[macro_use]
-extern crate clap;
-extern crate themis;
-
 use std::fs::File;
 use std::io::{self, Read, Write};
 
+use clap::clap_app;
 use themis::secure_cell::SecureCell;
 
 fn main() {

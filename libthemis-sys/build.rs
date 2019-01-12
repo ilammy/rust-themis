@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate bindgen;
-extern crate cc;
-#[cfg(feature = "vendored")]
-extern crate libthemis_src;
-extern crate pkg_config;
-
 use std::env;
 use std::path::{Path, PathBuf};
 

@@ -18,10 +18,10 @@ members = ["libthemis-src", "libthemis-sys"]
 travis-ci = { repository = "ilammy/rust-themis" }
 
 [features]
-vendored = ["libthemis-sys/vendored"]
+vendored = ["bindings/vendored"]
 
 [dependencies]
-libthemis-sys = { path = "libthemis-sys", version = "=0.0.2-2" }
+bindings = { package = "libthemis-sys", path = "libthemis-sys", version = "=0.0.2-2" }
 zeroize = "0.5.2"
 
 [dev-dependencies]

@@ -13,14 +13,13 @@
 // limitations under the License.
 
 #[macro_use]
-extern crate clap;
-extern crate env_logger;
-#[macro_use]
 extern crate log;
 
 use std::collections::HashSet;
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+
+use clap::clap_app;
 
 fn main() {
     env_logger::init();

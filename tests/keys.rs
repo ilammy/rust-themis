@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate themis;
-
 use themis::keygen::{gen_ec_key_pair, gen_rsa_key_pair};
 use themis::keys::{
     EcdsaPublicKey, EcdsaSecretKey, KeyKind, KeyPair, PublicKey, RsaPublicKey, RsaSecretKey,

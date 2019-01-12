@@ -12,19 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate themis;
+use std::collections::BTreeMap;
+use std::rc::Rc;
+use std::sync::mpsc::{channel, Receiver, Sender};
 
-use std::{
-    collections::BTreeMap,
-    rc::Rc,
-    sync::mpsc::{channel, Receiver, Sender},
-};
-
-use themis::{
-    keygen::gen_ec_key_pair,
-    keys::EcdsaPublicKey,
-    secure_session::{SecureSession, SecureSessionTransport},
-};
+use themis::keygen::gen_ec_key_pair;
+use themis::keys::EcdsaPublicKey;
+use themis::secure_session::{SecureSession, SecureSessionTransport};
 
 struct DummyTransport {
     key_map: Rc<BTreeMap<Vec<u8>, EcdsaPublicKey>>,
