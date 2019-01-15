@@ -42,7 +42,7 @@
 //!
 //! [Key generation functions][keygen] return matching key pairs. Some APIs (like Secure Message
 //! in encryption mode) require you to pass key pairs so you are ready to go. Sometimes you may
-//! need the keys separately, in which case they can be easily split into public ans secret parts:
+//! need the keys separately, in which case they can be easily split into public and secret parts:
 //!
 //! [keygen]: ../keygen/index.html
 //!
@@ -76,6 +76,7 @@
 //! let (secret_ec, _) = gen_ec_key_pair().split();
 //! let (_, public_rsa) = gen_rsa_key_pair().split();
 //!
+//! // This will return an Err because ECDSA secret key does not match RSA public key:
 //! let key_pair = KeyPair::try_join(secret_ec, public_rsa)?;
 //! # Ok(())
 //! # }
@@ -353,7 +354,7 @@ impl KeyPair {
     /// to use the secret key to decrypt data encrypted with the public key.
     ///
     /// However, it does verify that _the kinds_ of the keys match: i.e., that they are both
-    /// either RSA or ECDSA keys. An error is returned if that's not the case. You can check
+    /// either RSA or ECDSA keys. An error is returned if that’s not the case. You can check
     /// the kind of the key beforehand via its `kind()` method.
     pub fn try_join<S, P>(secret_key: S, public_key: P) -> Result<KeyPair>
     where

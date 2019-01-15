@@ -74,7 +74,7 @@ Please refer to the documentation for installation instructions:
 This crate uses `pkg-config` to locate the library. If you use
 non-standard installation of Themis then you can help pkg-config
 to locate your library by setting the PKG_CONFIG_PATH environment
-variable to path where `libthemis.pc` file is located.
+variable to the path where `libthemis.pc` file is located.
 
 {}
 ",

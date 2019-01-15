@@ -18,7 +18,7 @@ Then you simply add this to your Cargo.toml:
 themis = "0.0.2"
 ```
 
-And you're ready to go.
+And you’re ready to go.
 You can start off experimenting with [the examples].
 
 [the quickstart guide]: https://github.com/cossacklabs/themis/blob/master/README.md#quickstart
@@ -26,14 +26,14 @@ You can start off experimenting with [the examples].
 
 ## Building
 
-This is a binding so it requires a native Themis library.
+Rust-Themis is a binding so it requires a native Themis library.
 After that all the usual Cargo commands like `cargo test` should work out-of-the-box.
 
 ### Native Themis library
 
 The easiest way to make native Themis available is to install it into your system.
 Please refer to [the quickstart guide] for installation instructions for your platform.
-Once that's done the build should complete successfully.
+Once that’s done the build should complete successfully.
 
 If the compilation fails with a message like this:
 
@@ -82,12 +82,12 @@ Refer to [the `pkg_config` documentation] for more information about available e
 
 ### 🍺 A note for Homebrew users 
 
-If you install Themis via `brew` on macOS then it will be using Homebrew's OpenSSL libraries.
-Homebrew does not install OpenSSL into default system location (it's _keg-only_).
-That's because your system is likely to contain its own OpenSSL installation in default path
-and Homebrew won't replace it to avoid accidental breakage. 
+If you install Themis via `brew` on macOS then it will be using Homebrew’s OpenSSL libraries.
+Homebrew does not install OpenSSL into default system location (it’s _keg-only_).
+That’s because your system is likely to contain its own OpenSSL installation in default path
+and Homebrew won’t replace it to avoid accidental breakage. 
 
-You need to tell pkg-config to use Homebrew's OpenSSL
+You need to tell pkg-config to use Homebrew’s OpenSSL
 by setting `PKG_CONFIG_PATH` to the keg location of OpenSSL used by Themis.
 You can usually find out where it is with a spell like this:
 

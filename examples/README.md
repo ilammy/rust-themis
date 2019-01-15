@@ -85,11 +85,11 @@ It is deliberately kept simple,
 but the same principle can be applied to properly framed TCP transports
 as well as to using Tokio for async IO instead of blocking stdlib.
 
-Usually you don't need to specify any custom options,
+Usually you don’t need to specify any custom options,
 the command-line defaults are expected to work right away.
 But you can override the defaults for port assignment and key file locations if necessary.
 
-First you'll need to generate the keys for clients.
+First you’ll need to generate the keys for clients.
 It also may be useful to enable logging before starting the server.
 This example uses [`env_logger` crate][env_logger] for logging
 which is configurable via environment variable `RUST_LOG`.
@@ -118,8 +118,8 @@ $ cargo run --example secure_message_client_encrypt
 ```
 
 The first message from the client will introduce it to the server
-after which the server will relay other clients' messages to the newly joined peer.
-(Sorry, you'll have to manually type in nicknames at the moment.)
+after which the server will relay other clients’ messages to the newly joined peer.
+(Sorry, you have to manually type in nicknames at the moment.)
 
 The clients use the generated keys to secure communications.
 You can observe the exchange with `tcpdump`:

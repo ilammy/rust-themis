@@ -16,7 +16,7 @@
 //!
 //! **Secure Comparator** is an interactive protocol for two parties that compares whether they
 //! share the same secret or not. It is built around a [Zero Knowledge Proof][ZKP]-based protocol
-//! ([Socialist Millionaire's Protocol][SMP]), with a number of [security enhancements][paper].
+//! ([Socialist Millionaire’s Protocol][SMP]), with a number of [security enhancements][paper].
 //!
 //! Secure Comparator is transport-agnostic and only requires the user(s) to pass messages
 //! in a certain sequence. The protocol itself is ingrained into the functions and requires
@@ -28,8 +28,8 @@
 //!
 //! # Examples
 //!
-//! Secure Comparator has two parties — called client and server — the only difference between
-//! them is that the client is one who initiates the comparison.
+//! Secure Comparator has two parties — called the client and the server — the only difference
+//! between them is that the client is the one who initiates the comparison.
 //!
 //! Before initiating the protocol both parties should [append their secrets] to be compared.
 //! This can be done incrementally so even multi-gigabyte data sets can be compared with ease.
@@ -47,7 +47,7 @@
 //! # }
 //! ```
 //!
-//! After that the client [initiates the comparison] and runs the following loop:
+//! After that the client [initiates the comparison] and runs a loop like this:
 //!
 //! [initiates the comparison]: struct.SecureComparator.html#method.begin_compare
 //!
@@ -82,7 +82,7 @@
 //! }
 //!
 //! if !comparison.get_result()? {
-//!     panic!("handle failed comparison here");
+//!     unimplemented!("handle failed comparison here");
 //! }
 //! # Ok(())
 //! # }
@@ -122,13 +122,14 @@
 //! }
 //!
 //! if !comparison.get_result()? {
-//!     panic!("handle failed comparison here");
+//!     unimplemented!("handle failed comparison here");
 //! }
 //! # Ok(())
 //! # }
 //! ```
 //!
-//! Both use [`get_result`] to get the comparison result after it [`is_complete`]:
+//! Both the server and the client use [`get_result`] to get the comparison result
+//! after it [`is_complete`]:
 //!
 //! [`get_result`]: struct.SecureComparator.html#method.get_result
 //! [`is_complete`]: struct.SecureComparator.html#method.is_complete
@@ -155,11 +156,11 @@ pub struct SecureComparator {
 }
 
 impl SecureComparator {
-    /// Prepares for a new comparison.
+    /// Prepares a new comparison.
     ///
     /// # Panics
     ///
-    /// May panic on internal unrecoverable errors (like memory allocation).
+    /// May panic on internal unrecoverable errors (e.g., out-of-memory).
     pub fn new() -> Self {
         match SecureComparator::try_new() {
             Ok(comparator) => comparator,
@@ -186,13 +187,14 @@ impl SecureComparator {
     /// then the comparison will always return `false`. In this case you will need to recreate
     /// a `SecureComparator` to make a new comparison.
     ///
-    /// You can use this method between completed comparisons, but not when you're in the middle
-    /// of one. That is, [`append_secret`] is safe call either before [`begin_compare`]
-    /// or after [`get_result`]. Otherwise it will fail and return an error.
+    /// You can use this method only before the comparison has been started. That is,
+    /// [`append_secret`] is safe call only before [`begin_compare`] or [`proceed_compare`].
+    /// It will fail with an error if you try to append more data when you’re in the middle of
+    /// a comparison or after it has been completed.
     ///
     /// [`append_secret`]: struct.SecureComparator.html#method.append_secret
     /// [`begin_compare`]: struct.SecureComparator.html#method.begin_compare
-    /// [`get_result`]: struct.SecureComparator.html#method.get_result
+    /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
     ///
     /// # Examples
     ///
@@ -290,7 +292,7 @@ impl SecureComparator {
     /// comparison is complete.
     ///
     /// Both peers should have appended all the compared data before using this method, and no
-    /// additional data should be appended while the comparison is underway.
+    /// additional data may be appended while the comparison is underway.
     ///
     /// [`proceed_compare`]: struct.SecureComparator.html#method.proceed_compare
     /// [`is_complete`]: struct.SecureComparator.html#method.is_complete
@@ -349,7 +351,7 @@ impl SecureComparator {
     /// Returns the result of comparison.
     ///
     /// Let it be a surprise: `true` if data has been found equal on both peers, `false` otherwise.
-    /// Or an error if you call this method too early, or a real error has happened during the
+    /// Or an error if you call this method too early, or if a real error has happened during the
     /// comparison.
     ///
     /// # Examples

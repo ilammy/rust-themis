@@ -157,7 +157,7 @@ impl SecureMessage {
 
 /// Secure Message signing.
 ///
-/// **Signed message** is useful for cases where you don't need data confidentiality. It allows
+/// **Signed message** is useful for cases where you don’t need data confidentiality. It allows
 /// the receiver to verify the origin and integrity of the data while still allowing intermediate
 /// nodes to process it accordingly (for example, route data based on its type).
 ///
@@ -247,9 +247,15 @@ impl SecureSign {
     }
 }
 
+// TODO: provide a way to inspect signed messages
+//
+// It would be nice to be able to get access to plaintext data in messages returned by SecureSign.
+// Consider returning something like SignedMessage which is a newtype over Vec<u8> with additional
+// utility methods and impls like AsRef<[u8]> and Into<Vec<u8>>.
+
 /// Secure Message verification.
 ///
-/// **Signed message** is useful for cases where you don't need data confidentiality. It allows
+/// **Signed message** is useful for cases where you don’t need data confidentiality. It allows
 /// the receiver to verify the origin and integrity of the data while still allowing intermediate
 /// nodes to process it accordingly (for example, route data based on its type).
 ///
