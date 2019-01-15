@@ -96,35 +96,6 @@ $ find $(brew --prefix $(brew deps themis-openssl)) -follow -type d -name pkgcon
 /usr/local/opt/openssl/lib/pkgconfig
 ```
 
-### ⛑ Bundled *.pc files
-
-Unfortunately, Themis packages currently do not include *.pc files for pkg-config.
-You can use the ones bundled with this repository as a temporary measure.
-Take a look into [`pkgconfig`](pkgconfig) directory:
-
-- `pkgconfig/system/*.pc` —
-  if you install Themis into `/usr/lib`
-  (usually the case on Linux with package managers)
-- `pkgconfig/local/*.pc` —
-  if you install Themis into `/usr/local/lib`
-  (usually the case on macOS or with `make install`)
-
-Copy these files somewhere in your home directory, for example,
-and tell pkg-config to use them:
-
-```console
-$ mkdir ~/pkgconfig
-$ cp pkgconfig/usr/local/lib/pkgconfig/*.pc ~/pkgconfig/
-$ export PKG_CONFIG_PATH=$HOME/pkgconfig
-```
-
-Multiple paths in `PKG_CONFIG_PATH` are separated with colons,
-like this:
-
-```console
-$ export PKG_CONFIG_PATH=$HOME/pkgconfig:/usr/local/opt/openssl/lib/pkgconfig
-```
-
 ## Licensing
 
 The code is distributed under [Apache 2.0 license](LICENSE).

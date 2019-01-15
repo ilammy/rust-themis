@@ -13,13 +13,25 @@ env:
   global:
   - RUSTFLAGS="-D warnings"
 
-install:
+before_install:
 - rustup component add clippy-preview
 - rustup component add rustfmt-preview
 - cargo deadlinks --version || cargo install cargo-deadlinks
 
 jobs:
   include:
+  - name: Master Themis
+    install:
+    - git clone https://github.com/cossacklabs/themis.git /tmp/themis
+    - cd /tmp/themis && sudo make install && cd -
+    script:
+    - cargo fmt -- --check
+    - cargo clean --doc && cargo doc --no-deps && cargo deadlinks
+    - cargo clippy --all-targets
+    - cargo build
+    - cargo test
+    - LIBTHEMIS_STATIC=1 cargo build
+    - LIBTHEMIS_STATIC=1 cargo test
   - name: System Themis
     addons:
       apt:
@@ -28,8 +40,6 @@ jobs:
             key_url: "https://pkgs.cossacklabs.com/gpg"
         packages:
           - libthemis-dev
-    env:
-    - PKG_CONFIG_PATH=$TRAVIS_BUILD_DIR/pkgconfig/system
     script:
     - cargo fmt -- --check
     - cargo clean --doc && cargo doc --no-deps && cargo deadlinks
@@ -44,3 +54,9 @@ jobs:
     - cargo clippy --all-targets --features "vendored"
     - cargo build --features "vendored"
     - cargo test --features "vendored"
+
+matrix:
+  allow_failures:
+  # The latest released version of Themis (0.10) does not include
+  # proper pkg-config files so the build is failing for now.
+  - name: System Themis
