@@ -19,8 +19,8 @@ You can run the examples with Cargo like this:
 
 ```
 $ cargo run --example keygen -- --help
-keygen 0.0.1
-Generating private-public ECDSA key pairs.
+keygen 0.0.3
+Generating ECDSA key pairs.
 
 USAGE:
     keygen [OPTIONS]
@@ -30,8 +30,8 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-        --private <path>    Private key file (default: private.key)
-        --public <path>     Public key file (default: public.key)
+        --public <path>    Public key file (default: public.key)
+        --secret <path>    Secret key file (default: secret.key)
 ```
 
 Note that the arguments are passed after `--`.

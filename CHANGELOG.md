@@ -3,6 +3,11 @@
 
 The version currently under development.
 
+Version 0.0.3 — 2019-01-17
+==========================
+
+Documentation and internal improvements.
+
 Themis now requires **Rust 2018** (rustc 1.31+) to compile.
 
 ## New features
