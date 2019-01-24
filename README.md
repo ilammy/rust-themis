@@ -6,6 +6,15 @@ Rust binding for [Themis] crypto library.
 
 [Themis]: https://github.com/cossacklabs/themis
 
+<hr/>
+
+❄️ **Repository is archived** ❄️
+
+The project development has been moved to [the core organization][Themis].
+Please go there for new versions.
+
+<hr/>
+
 ## Usage
  
 First you need to install the native Themis library.
